@@ -5,6 +5,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "uv run --directory apps/api fastapi dev tomo/main.py --port 8000",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"
@@ -15,12 +17,11 @@
     "turbo": "^2.9.18",
     "typescript": "~6"
   },
-  "packageManager": "npm@11.17.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=20"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  }
 }

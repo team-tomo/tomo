@@ -12,8 +12,19 @@ dist
 dist-ssr
 *.local
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # turbo
 .turbo
@@ -21,6 +32,7 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -31,3 +43,6 @@ dist-ssr
 
 # typescript
 *.tsbuildinfo
+
+# tanstack router
+.tanstack/
