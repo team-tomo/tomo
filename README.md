@@ -27,6 +27,7 @@ Fill both `.env` files with the hosted Supabase project URL and keys from the da
 ```bash
 pnpm dev          # web → http://localhost:5173
 pnpm dev:api      # API  → http://localhost:8000
+pnpm test:api     # API pytest
 ```
 
 ## Add UI components
