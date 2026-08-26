@@ -10,6 +10,7 @@
     "test:api": "uv run --directory apps/api pytest",
     "lint": "turbo lint",
     "format": "turbo format",
+    "format:check": "turbo format:check",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
