@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/healthz")
+router = APIRouter()
 
 
-@router.get("/")
+@router.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
