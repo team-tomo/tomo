@@ -7,6 +7,7 @@ dependencies = [
     "fastapi[standard]>=0.128.0",
     "pydantic-settings>=2.11.0",
     "slowapi>=0.1.10",
+    "supabase>=2.31.0",
 ]
 
 [dependency-groups]
