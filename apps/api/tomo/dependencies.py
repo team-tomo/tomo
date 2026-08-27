@@ -40,7 +40,7 @@ async def get_auth_context(
     token = credentials.credentials
     supabase_client = await acreate_client(
         settings.SUPABASE_URL,
-        settings.SUPABASE_ANON_KEY,
+        settings.SUPABASE_PUBLIC_KEY,
         options=AsyncClientOptions(
             headers={"Authorization": f"Bearer {token}"},
             auto_refresh_token=False,
@@ -79,7 +79,7 @@ async def get_public_client() -> AsyncClient:
     try:
         supabase_client = await acreate_client(
             settings.SUPABASE_URL,
-            settings.SUPABASE_ANON_KEY,
+            settings.SUPABASE_PUBLIC_KEY,
             options=AsyncClientOptions(
                 auto_refresh_token=False,
                 persist_session=False,
