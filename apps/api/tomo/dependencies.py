@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -13,18 +12,12 @@ from supabase import (
     acreate_client,
 )
 from tomo.auth.service import AuthService, auth_service
+from tomo.context import AuthContext
 from tomo.core.config import settings
 
 security = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True, slots=True)
-class AuthContext:
-    client: AsyncClient
-    current_user_id: str
-    token: str
 
 
 async def get_auth_context(
