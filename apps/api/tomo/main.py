@@ -4,11 +4,13 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from tomo.api import router
 from tomo.core.config import settings
+from tomo.core.logging import setup_logging
 from tomo.core.rate_limiter import configure_rate_limiter
 
 
 def _configure_hosts(application: FastAPI) -> None:
     """Configure trusted hosts for the application."""
+
     application.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=settings.ALLOWED_HOSTS,
@@ -17,6 +19,7 @@ def _configure_hosts(application: FastAPI) -> None:
 
 def _configure_cors(application: FastAPI) -> None:
     """Configure CORS for the application."""
+
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_ORIGINS,
@@ -28,6 +31,8 @@ def _configure_cors(application: FastAPI) -> None:
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+
+    setup_logging()
     application = FastAPI(title="Tomo API")
 
     configure_rate_limiter(application)
