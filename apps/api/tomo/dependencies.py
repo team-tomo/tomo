@@ -97,6 +97,30 @@ async def get_public_client() -> AsyncClient:
 PublicClientDependency = Annotated[AsyncClient, Depends(get_public_client)]
 
 
+async def get_service_client() -> AsyncClient:
+    """Returns a service role supabase client."""
+
+    try:
+        supabase_client = await acreate_client(
+            settings.SUPABASE_URL,
+            settings.SUPABASE_SERVICE_KEY,
+            options=AsyncClientOptions(
+                auto_refresh_token=False,
+                persist_session=False,
+            ),
+        )
+        return supabase_client
+    except SupabaseException as e:
+        logger.error(f"Failed to create service role supabase client: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+ServiceClientDependency = Annotated[AsyncClient, Depends(get_service_client)]
+
+
 def get_auth_service() -> AuthService:
     """Returns the auth service instance."""
 
