@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
+    ENABLE_DEV_AUTH: bool = False
     ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
     ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
     SUPABASE_URL: str = ""
