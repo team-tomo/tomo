@@ -1,4 +1,3 @@
-# Shortcuts:
 # Cmd/Ctrl+Enter - Toggle todo box
 # Alt+D - Mark as done (✔)
 # Alt+C - Mark as cancelled (✘)
@@ -7,38 +6,10 @@
 
 # Deployment:
   # Backend:
-    ✔ Deploy backend and frontend to Railway
-    ✔ GitHub action checks before deployment
     ☐ Get domain name teamtomo.ai (available)
 
 # Auth Service:
   # Backend:
-    ✔ Dev account creation for local development @done(26-08-27 14:09)
-    ☐ Setup supabase tables (profiles, invitation codes, invitation redemptions)
-      ☐ Profiles Table
-        ☐ id: uuid = auth.users.id (PK)
-        ☐ email: text NOT NULL, unique (copy at signup)
-        ☐ role: NOT NULL enum dev | executive | lead | ic
-        ☐ onboarding_status: NOT NULL default pending; enum pending | complete
-        ☐ is_active: boolean NOT NULL default true (left Tomo vs still in; reactivate by flipping)
-        ☐ username: text NULL until onboarding, unique ignoring case
-        ☐ full_name, avatar_url, bio, job_title, phone: text NULL until onboarding
-        ☐ created_at, updated_at: timestamptz DEFAULT now()
-        ☐ never delete rows
-      ☐ Invitation Codes Table
-        ☐ id: uuid
-        ☐ code: text unique exact (format later)
-        ☐ role: same enum as profiles
-        ☐ status: default active; enum active | used | revoked
-        ☐ created_by: uuid NOT NULL → profiles.id, ON DELETE RESTRICT
-        ☐ created_at, updated_at: timestamptz DEFAULT now()
-        ☐ one-shot, not email-bound
-      ☐ Invitation Redemptions Table
-        ☐ id: uuid
-        ☐ code_id: uuid unique → invitation_codes
-        ☐ profile_id: uuid unique → profiles
-        ☐ redeemed_at: timestamptz DEFAULT now()
-      ☐ updated_at: one shared BEFORE UPDATE trigger (set_updated_at) on tables that have it; do not send updated_at in payloads
     ☐ Create a new invitation
     ☐ Create a new account (invite only)
 
@@ -47,3 +18,8 @@
     ☐ Create invitation page
     ☐ Auth check component
 
+Archive:
+  ✔ Deploy backend and frontend to Railway @project(# Deployment.# Backend)
+  ✔ GitHub action checks before deployment @project(# Deployment.# Backend)
+  ✔ Dev account creation for local development @done(26-08-27 14:09) @project(# Auth Service.# Backend)
+  ✔ Setup supabase tables (profiles, invitation codes, invitation redemptions) @done(26-08-29 19:41) @project(# Auth Service.# Backend)
