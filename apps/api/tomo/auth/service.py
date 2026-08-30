@@ -155,6 +155,7 @@ class AuthService:
 
         return response.user
 
+    # TODO: need to add username validation and make it unique in supabase
     async def signup(
         self,
         payload: CreateAccountSchema,
