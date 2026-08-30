@@ -32,8 +32,15 @@ def _configure_cors(application: FastAPI) -> None:
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
 
+    is_production = settings.ENVIRONMENT == "production"
+
     setup_logging()
-    application = FastAPI(title="Tomo API")
+    application = FastAPI(
+        title="Tomo API",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
+    )
 
     configure_rate_limiter(application)
     _configure_cors(application)
