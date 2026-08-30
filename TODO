@@ -9,9 +9,6 @@
     ☐ Get domain name teamtomo.ai (available)
 
 # Auth Service:
-  # Backend:
-    ☐ Create a new invitation
-    ☐ Create a new account (invite only)
 
   #Frontend:
     ☐ Authentication Page (Sign up, Sign in, Forgot password, etc.)
@@ -19,6 +16,8 @@
     ☐ Auth check component
 
 Archive:
+  ✔ Create a new invitation @done(26-08-30 15:45) @project(# Auth Service.# Backend)
+  ✔ Create a new account (invite only) @done(26-08-30 15:45) @project(# Auth Service.# Backend)
   ✔ Deploy backend and frontend to Railway @project(# Deployment.# Backend)
   ✔ GitHub action checks before deployment @project(# Deployment.# Backend)
   ✔ Dev account creation for local development @done(26-08-27 14:09) @project(# Auth Service.# Backend)
