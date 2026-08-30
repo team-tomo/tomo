@@ -28,13 +28,11 @@ class AuthService:
             await service_client.from_(_INVITATION_CODES)
             .select("*")
             .eq("code", code)
-            .limit(1)
             .execute()
         )
 
-        rows = response.data if response else None
-        row = rows[0] if rows else None
-        if not row or not row["status"] == "active":
+        row = response.data[0] if response.data else None
+        if not row or row["status"] != "active":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid invitation code",
@@ -56,7 +54,9 @@ class AuthService:
 
         return update_response.data[0]
 
-    async def _release_invitation_code(self, row: dict, service_client: AsyncClient):
+    async def _release_invitation_code(
+        self, row: dict, service_client: AsyncClient
+    ) -> None:
         """When signup fails, release the invitation code."""
 
         try:
@@ -96,6 +96,29 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to perform this action",
+            )
+
+    async def _record_invitation_code_claim(
+        self, code_id: str, user_id: str, supabase: AsyncClient
+    ) -> None:
+        """Record the claim of invitation code"""
+
+        try:
+            response = (
+                await supabase.from_(_INVITATION_REDEMPTIONS)
+                .inser({"code_id": code_id, "profile_id": user_id})
+                .execute()
+            )
+        except AuthApiError as e:
+            logger.error(f"Failed to record invitation code claim: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to record invitation code claim",
+            )
+
+        if not response.data:
+            logger.critical(
+                "Failed to record invitation code %s claim by user %s", code_id, user_id
             )
 
     async def create_dev_account(
@@ -168,7 +191,33 @@ class AuthService:
                 detail="Failed to create account with this email",
             )
 
-        # TODO: record the claimed code and update profile table
+        await self._record_invitation_code_claim(
+            claimed_code["id"], user.id, service_client
+        )
+
+        profile = await (
+            supabase.from_(_PROFILES)
+            .insert(
+                {
+                    "id": user.id,
+                    "email": payload.email,
+                    "full_name": payload.full_name.strip(),
+                    "role": claimed_code["role"],
+                    "username": payload.username.strip(),
+                    "is_active": True,
+                    "onboarding_status": "pending",
+                }
+            )
+            .execute()
+        )
+
+        if not profile.data:
+            logger.critical("Failed to create profile for user %s", user.id)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create profile for user",
+            )
+
         return response
 
     async def create_invitation(

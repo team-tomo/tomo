@@ -8,6 +8,7 @@ class CreateDevAccountSchema(BaseModel):
 
 class CreateAccountSchema(CreateDevAccountSchema):
     invite_code: str
+    username: str
 
 
 class CreateInviteCodeSchema(BaseModel):
