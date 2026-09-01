@@ -5,10 +5,10 @@ export const Route = createFileRoute("/_features")({
   component: FeatureLayout,
   beforeLoad: async () => {
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       throw redirect({ to: "/auth/signin" })
     }
   },
