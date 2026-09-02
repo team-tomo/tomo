@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as FeaturesRouteRouteImport } from './routes/_features/route'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as FeaturesIndexRouteImport } from './routes/_features/index'
+import { Route as FeaturesTimesheetRouteRouteImport } from './routes/_features/timesheet/route'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
@@ -29,6 +30,11 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesTimesheetRouteRoute = FeaturesTimesheetRouteRouteImport.update({
+  id: '/timesheet',
+  path: '/timesheet',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -55,12 +61,14 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/': typeof AuthIndexRoute
 }
 export interface FileRoutesByTo {
+  '/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_features': typeof FeaturesRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
+  '/_features/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
@@ -82,16 +91,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth/reset-password' | '/auth/signin' | '/auth/signup' | '/' | '/auth'
+  to:
+    | '/timesheet'
+    | '/auth/reset-password'
+    | '/auth/signin'
+    | '/auth/signup'
+    | '/'
+    | '/auth'
   id:
     | '__root__'
     | '/_features'
     | '/auth'
+    | '/_features/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
@@ -127,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesIndexRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
+    '/_features/timesheet': {
+      id: '/_features/timesheet'
+      path: '/timesheet'
+      fullPath: '/timesheet'
+      preLoaderRoute: typeof FeaturesTimesheetRouteRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
     '/auth/': {
       id: '/auth/'
       path: '/'
@@ -159,10 +183,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface FeaturesRouteRouteChildren {
+  FeaturesTimesheetRouteRoute: typeof FeaturesTimesheetRouteRoute
   FeaturesIndexRoute: typeof FeaturesIndexRoute
 }
 
 const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
+  FeaturesTimesheetRouteRoute: FeaturesTimesheetRouteRoute,
   FeaturesIndexRoute: FeaturesIndexRoute,
 }
 
