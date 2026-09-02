@@ -86,13 +86,16 @@ function FeatureLayout() {
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={handleClockOutDialogOpenChange}>
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-2">
-            <HeaderBreadcrumb />
-            <div className="ml-auto flex items-center gap-4">
+    <SidebarProvider defaultOpen={false}>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-2">
+          <HeaderBreadcrumb />
+          <div className="ml-auto flex items-center gap-4">
+            <AlertDialog
+              open={open}
+              onOpenChange={handleClockOutDialogOpenChange}
+            >
               {isLoading ? (
                 <Skeleton className="h-6 w-24 rounded-sm" />
               ) : canClockOut && !canClockIn ? (
@@ -124,76 +127,83 @@ function FeatureLayout() {
                   {isClockingIn ? "Clocking in..." : "Clock In"}
                 </Button>
               )}
-            </div>
-          </header>
-          <Outlet />
-        </SidebarInset>
-      </SidebarProvider>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-base font-medium text-primary">
-            Are you sure you want to clock out?
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            You will not be able to clock in again until the next day.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <form id="clock-out-form" onSubmit={form.handleSubmit(onSubmit)}>
-          <FieldSet>
-            <FieldGroup>
-              <Controller
-                name="notes"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field>
-                    <FieldLabel htmlFor="notes">Notes</FieldLabel>
-                    <Textarea
-                      {...field}
-                      id="notes"
-                      placeholder="What did you work on today?"
-                      aria-invalid={fieldState.invalid}
-                      maxLength={200}
-                      autoFocus
-                    />
-                    {fieldState.error && (
-                      <FieldError>{fieldState.error.message}</FieldError>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-base font-medium text-primary">
+                    Are you sure you want to clock out?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will not be able to clock in again until the next day.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <form
+                  id="clock-out-form"
+                  onSubmit={form.handleSubmit(onSubmit)}
+                >
+                  <FieldSet>
+                    <FieldGroup>
+                      <Controller
+                        name="notes"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field>
+                            <FieldLabel htmlFor="notes">Notes</FieldLabel>
+                            <Textarea
+                              {...field}
+                              id="notes"
+                              placeholder="What did you work on today?"
+                              aria-invalid={fieldState.invalid}
+                              maxLength={200}
+                              autoFocus
+                            />
+                            {fieldState.error && (
+                              <FieldError>
+                                {fieldState.error.message}
+                              </FieldError>
+                            )}
+                            <FieldDescription className="italic">
+                              This note is saved with your clock-out record. It
+                              can be used by the AI agent workflow when drafting
+                              weekly actuals.
+                            </FieldDescription>
+                          </Field>
+                        )}
+                      />
+                    </FieldGroup>
+                  </FieldSet>
+
+                  <Button
+                    type="submit"
+                    form="clock-out-form"
+                    variant="destructive"
+                    className="mt-4 w-full"
+                    disabled={isClockingOut}
+                  >
+                    {isClockingOut ? (
+                      <>
+                        <HugeiconsIcon
+                          icon={Loading03Icon}
+                          className="size-4 animate-spin"
+                        />
+                        Clocking out...
+                      </>
+                    ) : (
+                      "Clock out"
                     )}
-                    <FieldDescription className="italic">
-                      This note is saved with your clock-out record. It can be
-                      used by the AI agent workflow when drafting weekly
-                      actuals.
-                    </FieldDescription>
-                  </Field>
-                )}
-              />
-            </FieldGroup>
-          </FieldSet>
-
-          <Button
-            type="submit"
-            form="clock-out-form"
-            variant="destructive"
-            className="mt-4 w-full"
-            disabled={isClockingOut}
-          >
-            {isClockingOut ? (
-              <>
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  className="size-4 animate-spin"
-                />
-                Clocking out...
-              </>
-            ) : (
-              "Clock out"
-            )}
-          </Button>
-        </form>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="w-full">Cancel</AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+                  </Button>
+                </form>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="w-full">
+                    Cancel
+                  </AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </header>
+        <Outlet />
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
