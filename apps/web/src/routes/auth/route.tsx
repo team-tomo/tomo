@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase"
+import { SpiralsIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/auth")({
@@ -36,8 +38,7 @@ function AuthLayout() {
 
       <div className="relative z-10 mx-auto w-full max-w-sm">
         <div className="mb-4 flex items-center justify-center gap-2">
-          {/* <img src="/favicon.svg" alt="Tomo" className="h-8 w-8" /> */}
-          {/* <span className="text-lg font-medium text-[#ffffff]">Tomo</span> */}
+          <HugeiconsIcon icon={SpiralsIcon} className="h-8 w-8 text-white" />
         </div>
 
         <Outlet />
