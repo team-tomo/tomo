@@ -11,11 +11,11 @@
 # Auth Service:
 
   #Frontend:
-    ☐ Authentication Page (Sign up, Sign in, Forgot password, etc.)
     ☐ Create invitation page
-    ☐ Auth check component
 
 Archive:
+  ✔ Authentication Page (Sign up, Sign in) @done(26-09-01 17:44) @project(# Auth Service.#Frontend)
+  ✔ Auth check component @done(26-09-01 17:28) @project(# Auth Service.#Frontend)
   ✔ Create a new invitation @done(26-08-30 15:45) @project(# Auth Service.# Backend)
   ✔ Create a new account (invite only) @done(26-08-30 15:45) @project(# Auth Service.# Backend)
   ✔ Deploy backend and frontend to Railway @project(# Deployment.# Backend)
