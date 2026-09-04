@@ -106,7 +106,7 @@ class AuthService:
         try:
             response = (
                 await supabase.from_(_INVITATION_REDEMPTIONS)
-                .inser({"code_id": code_id, "profile_id": user_id})
+                .insert({"code_id": code_id, "profile_id": user_id})
                 .execute()
             )
         except AuthApiError as e:
@@ -245,6 +245,10 @@ class AuthService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Invitation code already exists",
                 )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create invitation code",
+            )
 
         if not response.data:
             raise HTTPException(
