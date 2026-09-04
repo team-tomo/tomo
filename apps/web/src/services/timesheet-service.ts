@@ -25,7 +25,7 @@ export type ClockOutResponse = {
 }
 
 export async function getTodayAttendanceStatus(): Promise<TodayAttendanceStatus> {
-  const res = await apiFetch("/attendance/today-status")
+  const res = await apiFetch("/timesheet/today-status")
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
@@ -38,7 +38,7 @@ export async function getTodayAttendanceStatus(): Promise<TodayAttendanceStatus>
 }
 
 export async function clockIn(): Promise<ClockInResponse> {
-  const res = await apiFetch("/attendance/clock-in", {
+  const res = await apiFetch("/timesheet/clock-in", {
     method: "POST",
   })
 
@@ -51,7 +51,7 @@ export async function clockIn(): Promise<ClockInResponse> {
 }
 
 export async function clockOut(notes: string): Promise<ClockOutResponse> {
-  const res = await apiFetch("/attendance/clock-out", {
+  const res = await apiFetch("/timesheet/clock-out", {
     method: "PATCH",
     body: JSON.stringify({
       notes: notes,
