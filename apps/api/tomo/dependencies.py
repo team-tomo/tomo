@@ -14,6 +14,7 @@ from supabase import (
 from tomo.auth.service import AuthService, auth_service
 from tomo.context import AuthContext
 from tomo.core.config import settings
+from tomo.timesheet.service import TimesheetService, timesheet_service
 
 security = HTTPBearer(auto_error=False)
 
@@ -121,3 +122,12 @@ def get_auth_service() -> AuthService:
 
 
 AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_timesheet_service() -> TimesheetService:
+    """Returns the timesheet service instance."""
+
+    return timesheet_service
+
+
+TimesheetServiceDependency = Annotated[TimesheetService, Depends(get_timesheet_service)]
