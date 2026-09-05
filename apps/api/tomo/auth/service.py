@@ -11,7 +11,7 @@ from tomo.auth.schemas import (
 )
 from tomo.context import AuthContext
 from tomo.core.config import settings
-from tomo.enums import ADMIN_ROLES
+from tomo.enums import ADMIN_ROLES, UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +78,18 @@ class AuthService:
         if not response.data:
             logger.critical(
                 "Failed to release invitation code %s after signup failure", row["id"]
+            )
+
+    async def _delete_auth_user(self, user_id: str, service_client: AsyncClient) -> None:
+        """Remove an auth user after a failed profile insert so the account is not left half-created."""
+
+        try:
+            await service_client.auth.admin.delete_user(user_id)
+        except Exception:
+            logger.critical(
+                "Failed to roll back auth user %s after profile insert failure",
+                user_id,
+                exc_info=True,
             )
 
     async def _require_admin_account(self, auth_context: AuthContext) -> None:
@@ -147,13 +159,45 @@ class AuthService:
                 detail="Failed to create dev account",
             )
 
-        if response.user is None:
+        user = response.user
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Unable to create account with this email",
             )
 
-        return response.user
+        try:
+            profile = (
+                await service_client.from_(_PROFILES)
+                .insert(
+                    {
+                        "id": user.id,
+                        "email": payload.email,
+                        "full_name": payload.email.split("@", 1)[0],
+                        "role": UserRole.DEV,
+                        "is_active": True,
+                        "onboarding_status": "pending",
+                    }
+                )
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to create profile for user {user.id}: {e}")
+            await self._delete_auth_user(user.id, service_client)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create profile for user",
+            )
+
+        if not profile.data:
+            logger.critical("Failed to create profile for user %s", user.id)
+            await self._delete_auth_user(user.id, service_client)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create profile for user",
+            )
+
+        return user
 
     async def signup(
         self,
