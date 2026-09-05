@@ -162,7 +162,7 @@ function FeatureLayout() {
                                 {fieldState.error.message}
                               </FieldError>
                             )}
-                            <FieldDescription className="italic">
+                            <FieldDescription className="text-[11px] italic">
                               This note is saved with your clock-out record. It
                               can be used by the AI agent workflow when drafting
                               weekly actuals.
@@ -176,8 +176,7 @@ function FeatureLayout() {
                   <Button
                     type="submit"
                     form="clock-out-form"
-                    variant="destructive"
-                    className="mt-4 w-full"
+                    className="mt-4 w-full bg-destructive hover:bg-destructive/90"
                     disabled={isClockingOut}
                   >
                     {isClockingOut ? (
