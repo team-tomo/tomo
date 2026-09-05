@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
+import { UnauthenticatedError } from "@/lib/api"
 import type { UserRole } from "@/schemas/manage-account-schema"
 
 export type CurrentUser = {
@@ -16,7 +17,7 @@ async function fetchCurrentUser(): Promise<CurrentUser> {
   } = await supabase.auth.getSession()
 
   if (!session?.user) {
-    throw new Error("Not authenticated")
+    throw new UnauthenticatedError()
   }
 
   const { data: profile } = await supabase
