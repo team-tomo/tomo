@@ -14,11 +14,12 @@
     ☐ Create invitation page
 
 # Timesheet Service:
-  ☐ Get today's status of the user
   ☐ Submit time entry
   ☐ Create UI for timesheet features
 
 Archive:
+  ✔ Get today's status of the user @done(26-09-05 20:56) @project(# Timesheet Service)
+  ✔ Create timesheet table in supabase @done(26-09-05 20:56) @project(# Timesheet Service)
   ✔ Authentication Page (Sign up, Sign in) @done(26-09-01 17:44) @project(# Auth Service.#Frontend)
   ✔ Auth check component @done(26-09-01 17:28) @project(# Auth Service.#Frontend)
   ✔ Create a new invitation @done(26-08-30 15:45) @project(# Auth Service.# Backend)
