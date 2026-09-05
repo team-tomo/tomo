@@ -15,3 +15,14 @@ async def get_today_status(
 ):
     """Report whether the user can clock in or out today."""
     return await service.get_today_status(auth_context)
+
+
+@router.post("/clock-in")
+@limiter.limit("5/minute")
+async def clock_in(
+    request: Request,
+    auth_context: AuthContextDependency,
+    service: TimesheetServiceDependency,
+):
+    """Clock in the user for the current day."""
+    return await service.clock_in(auth_context)
