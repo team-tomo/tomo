@@ -141,7 +141,7 @@ class TimesheetService:
 
         if not response.data:
             raise HTTPException(
-                status_code=status.HTTP_409_BAD_REQUEST,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="User has already clocked out today",
             )
 
