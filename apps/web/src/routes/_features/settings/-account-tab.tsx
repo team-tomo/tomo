@@ -54,19 +54,22 @@ export function AccountTab() {
       phone: "",
     },
   })
+
   const dangerForm = useForm<DangerZoneInput>({
     resolver: zodResolver(DangerZoneSchema),
     defaultValues: {
       disable_account: false,
     },
   })
+
   const confirmForm = useForm<DisableAccountConfirmationInput>({
     resolver: zodResolver(DisableAccountConfirmationSchema),
     defaultValues: {
       confirmation: "",
     },
   })
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
   const disableAccount = dangerForm.watch("disable_account")
   const confirmation = confirmForm.watch("confirmation")
 
