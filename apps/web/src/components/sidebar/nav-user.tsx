@@ -9,7 +9,7 @@ import {
   CreditCard,
   Loading03Icon,
   LogOut,
-  Sparkles,
+  Settings01Icon,
 } from "@hugeicons/core-free-icons"
 import { useSignOut } from "@/hooks/use-auth"
 import type { CurrentUser } from "@/hooks/use-current-user"
@@ -83,7 +83,9 @@ export function NavUser({ user }: { user: CurrentUser }) {
           >
             <Avatar className="size-8">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {initials}
+              </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
@@ -115,9 +117,9 @@ export function NavUser({ user }: { user: CurrentUser }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <HugeiconsIcon icon={Sparkles} />
-                Upgrade to Pro
+              <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>
+                <HugeiconsIcon icon={Settings01Icon} />
+                Account Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -142,7 +144,7 @@ export function NavUser({ user }: { user: CurrentUser }) {
                 onClick={() => setIsSignOutDialogOpen(true)}
               >
                 <HugeiconsIcon icon={LogOut} />
-                Log out
+                Sign out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -157,7 +159,7 @@ export function NavUser({ user }: { user: CurrentUser }) {
               <DialogTitle className="text-lg font-bold">Sign out</DialogTitle>
               <DialogDescription>
                 Are you sure you want to sign out? You'll need to sign in again
-                to the platform.
+                to use the platform.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

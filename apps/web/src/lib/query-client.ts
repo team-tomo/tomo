@@ -17,6 +17,7 @@ export const queryClient = new QueryClient({
     queries: {
       retry: (failureCount, error) =>
         !(error instanceof UnauthenticatedError) && failureCount < 3,
+      refetchOnWindowFocus: false,
     },
   },
 })
