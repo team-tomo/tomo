@@ -12,12 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as FeaturesRouteRouteImport } from './routes/_features/route'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as FeaturesIndexRouteImport } from './routes/_features/index'
-import { Route as FeaturesAccountsRouteRouteImport } from './routes/_features/accounts/route'
-import { Route as FeaturesTimesheetRouteRouteImport } from './routes/_features/timesheet/route'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as FeaturesAccountsIndexRouteImport } from './routes/_features/accounts/index'
+import { Route as FeaturesSettingsIndexRouteImport } from './routes/_features/settings/index'
+import { Route as FeaturesTimesheetIndexRouteImport } from './routes/_features/timesheet/index'
 
 const FeaturesRouteRoute = FeaturesRouteRouteImport.update({
   id: '/_features',
@@ -31,16 +32,6 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => FeaturesRouteRoute,
-} as any)
-const FeaturesAccountsRouteRoute = FeaturesAccountsRouteRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => FeaturesRouteRoute,
-} as any)
-const FeaturesTimesheetRouteRoute = FeaturesTimesheetRouteRouteImport.update({
-  id: '/timesheet',
-  path: '/timesheet',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -63,69 +54,90 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const FeaturesAccountsIndexRoute = FeaturesAccountsIndexRouteImport.update({
+  id: '/accounts/',
+  path: '/accounts/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesSettingsIndexRoute = FeaturesSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesTimesheetIndexRoute = FeaturesTimesheetIndexRouteImport.update({
+  id: '/timesheet/',
+  path: '/timesheet/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
-  '/accounts': typeof FeaturesAccountsRouteRoute
-  '/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/': typeof AuthIndexRoute
+  '/accounts/': typeof FeaturesAccountsIndexRoute
+  '/settings/': typeof FeaturesSettingsIndexRoute
+  '/timesheet/': typeof FeaturesTimesheetIndexRoute
 }
 export interface FileRoutesByTo {
-  '/accounts': typeof FeaturesAccountsRouteRoute
-  '/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/accounts': typeof FeaturesAccountsIndexRoute
+  '/settings': typeof FeaturesSettingsIndexRoute
+  '/timesheet': typeof FeaturesTimesheetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_features': typeof FeaturesRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
-  '/_features/accounts': typeof FeaturesAccountsRouteRoute
-  '/_features/timesheet': typeof FeaturesTimesheetRouteRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/_features/': typeof FeaturesIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_features/accounts/': typeof FeaturesAccountsIndexRoute
+  '/_features/settings/': typeof FeaturesSettingsIndexRoute
+  '/_features/timesheet/': typeof FeaturesTimesheetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
-    | '/accounts'
-    | '/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/'
+    | '/accounts/'
+    | '/settings/'
+    | '/timesheet/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/accounts'
-    | '/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/'
     | '/auth'
+    | '/accounts'
+    | '/settings'
+    | '/timesheet'
   id:
     | '__root__'
     | '/_features'
     | '/auth'
-    | '/_features/accounts'
-    | '/_features/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/_features/'
     | '/auth/'
+    | '/_features/accounts/'
+    | '/_features/settings/'
+    | '/_features/timesheet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -156,20 +168,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesIndexRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
-    '/_features/accounts': {
-      id: '/_features/accounts'
-      path: '/accounts'
-      fullPath: '/accounts'
-      preLoaderRoute: typeof FeaturesAccountsRouteRouteImport
-      parentRoute: typeof FeaturesRouteRoute
-    }
-    '/_features/timesheet': {
-      id: '/_features/timesheet'
-      path: '/timesheet'
-      fullPath: '/timesheet'
-      preLoaderRoute: typeof FeaturesTimesheetRouteRouteImport
-      parentRoute: typeof FeaturesRouteRoute
-    }
     '/auth/': {
       id: '/auth/'
       path: '/'
@@ -198,19 +196,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_features/accounts/': {
+      id: '/_features/accounts/'
+      path: '/accounts'
+      fullPath: '/accounts/'
+      preLoaderRoute: typeof FeaturesAccountsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/settings/': {
+      id: '/_features/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof FeaturesSettingsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/timesheet/': {
+      id: '/_features/timesheet/'
+      path: '/timesheet'
+      fullPath: '/timesheet/'
+      preLoaderRoute: typeof FeaturesTimesheetIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
   }
 }
 
 interface FeaturesRouteRouteChildren {
-  FeaturesAccountsRouteRoute: typeof FeaturesAccountsRouteRoute
-  FeaturesTimesheetRouteRoute: typeof FeaturesTimesheetRouteRoute
   FeaturesIndexRoute: typeof FeaturesIndexRoute
+  FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
+  FeaturesSettingsIndexRoute: typeof FeaturesSettingsIndexRoute
+  FeaturesTimesheetIndexRoute: typeof FeaturesTimesheetIndexRoute
 }
 
 const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
-  FeaturesAccountsRouteRoute: FeaturesAccountsRouteRoute,
-  FeaturesTimesheetRouteRoute: FeaturesTimesheetRouteRoute,
   FeaturesIndexRoute: FeaturesIndexRoute,
+  FeaturesAccountsIndexRoute: FeaturesAccountsIndexRoute,
+  FeaturesSettingsIndexRoute: FeaturesSettingsIndexRoute,
+  FeaturesTimesheetIndexRoute: FeaturesTimesheetIndexRoute,
 }
 
 const FeaturesRouteRouteWithChildren = FeaturesRouteRoute._addFileChildren(

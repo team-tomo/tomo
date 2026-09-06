@@ -10,7 +10,7 @@ import {
   SpiralsIcon,
   StartUp02Icon,
   Target02Icon,
-  UserGroupIcon,
+  UserMultiple02Icon,
 } from "@hugeicons/core-free-icons"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { NavUser } from "@/components/sidebar/nav-user"
@@ -62,7 +62,7 @@ const data = {
     {
       title: "Directory",
       url: "/directory",
-      icon: <HugeiconsIcon icon={UserGroupIcon} />,
+      icon: <HugeiconsIcon icon={UserMultiple02Icon} />,
     },
   ],
   adminNav: [

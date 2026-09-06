@@ -7,6 +7,7 @@ import {
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/toast"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -18,8 +19,10 @@ export const Route = createRootRouteWithContext<{
 function RootLayout() {
   return (
     <ThemeProvider>
-      <Outlet />
-      <Toaster />
+      <TooltipProvider>
+        <Outlet />
+        <Toaster />
+      </TooltipProvider>
     </ThemeProvider>
   )
 }
