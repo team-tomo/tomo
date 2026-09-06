@@ -11,6 +11,7 @@ from supabase import (
     SupabaseException,
     acreate_client,
 )
+from tomo.account.service import AccountService, account_service
 from tomo.auth.service import AuthService, auth_service
 from tomo.context import AuthContext
 from tomo.core.config import settings
@@ -131,3 +132,12 @@ def get_timesheet_service() -> TimesheetService:
 
 
 TimesheetServiceDependency = Annotated[TimesheetService, Depends(get_timesheet_service)]
+
+
+def get_account_service() -> AccountService:
+    """Returns the account service instance."""
+
+    return account_service
+
+
+AccountServiceDependency = Annotated[AccountService, Depends(get_account_service)]
