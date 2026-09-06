@@ -10,10 +10,10 @@ export const Route = createFileRoute("/auth")({
     }
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (user) {
+    if (session?.user) {
       throw redirect({ to: "/" })
     }
   },

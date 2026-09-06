@@ -68,7 +68,7 @@ const data = {
   adminNav: [
     {
       title: "Manage Accounts",
-      url: "/manage-accounts",
+      url: "/accounts",
       icon: <HugeiconsIcon icon={IdentityCardIcon} />,
     },
     {

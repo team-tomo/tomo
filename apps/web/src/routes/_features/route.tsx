@@ -44,10 +44,10 @@ export const Route = createFileRoute("/_features")({
   component: FeatureLayout,
   beforeLoad: async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (!user) {
+    if (!session?.user) {
       throw redirect({ to: "/auth/signin" })
     }
   },
