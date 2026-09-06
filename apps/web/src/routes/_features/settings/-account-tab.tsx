@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { SaveIcon } from "@hugeicons/core-free-icons"
+import { Loading03Icon, SaveIcon } from "@hugeicons/core-free-icons"
+import { useAccountProfile, useUpdateProfile } from "@/hooks/use-account"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   ACCOUNT_FIELD_LIMITS,
@@ -43,16 +44,21 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 
+const EMPTY_PROFILE: AccountSettingsInput = {
+  full_name: "",
+  username: "",
+  bio: "",
+  job_title: "",
+  phone: "",
+}
+
 export function AccountTab() {
+  const { data: profile, isSuccess: isProfileLoaded } = useAccountProfile()
+  const { mutate: saveProfile, isPending: isSaving } = useUpdateProfile()
+
   const form = useForm<AccountSettingsInput>({
     resolver: zodResolver(AccountSettingsSchema),
-    defaultValues: {
-      full_name: "",
-      username: "",
-      bio: "",
-      job_title: "",
-      phone: "",
-    },
+    values: profile ?? EMPTY_PROFILE,
   })
 
   const dangerForm = useForm<DangerZoneInput>({
@@ -82,7 +88,10 @@ export function AccountTab() {
 
   return (
     <div>
-      <form id="account-settings-form">
+      <form
+        id="account-settings-form"
+        onSubmit={form.handleSubmit((data) => saveProfile(data))}
+      >
         <FieldSet className="flex flex-col gap-4 py-4">
           <h2 className="text-lg font-bold">Profile Information</h2>
           <FieldGroup className="gap-6">
@@ -236,9 +245,25 @@ export function AccountTab() {
           </FieldGroup>
         </FieldSet>
 
-        <Button type="submit" form="account-settings-form">
-          <HugeiconsIcon icon={SaveIcon} className="size-4" />
-          Save Changes
+        <Button
+          type="submit"
+          form="account-settings-form"
+          disabled={!isProfileLoaded || isSaving}
+        >
+          {isSaving ? (
+            <>
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="size-4 animate-spin"
+              />
+              Saving...
+            </>
+          ) : (
+            <>
+              <HugeiconsIcon icon={SaveIcon} className="size-4" />
+              Save Changes
+            </>
+          )}
         </Button>
       </form>
 
