@@ -28,6 +28,10 @@ export function useClockIn() {
         description: "Clocked in successfully",
         type: "success",
       })
+      queryClient.setQueryData(attendanceKeys.todayStatus(), {
+        can_clock_in: false,
+        can_clock_out: true,
+      })
       queryClient.invalidateQueries({ queryKey: attendanceKeys.todayStatus() })
     },
     onError: (error: Error) => {
@@ -48,6 +52,10 @@ export function useClockOut() {
       toast.add({
         description: "Clocked out successfully",
         type: "success",
+      })
+      queryClient.setQueryData(attendanceKeys.todayStatus(), {
+        can_clock_in: false,
+        can_clock_out: false,
       })
       queryClient.invalidateQueries({ queryKey: attendanceKeys.todayStatus() })
     },
