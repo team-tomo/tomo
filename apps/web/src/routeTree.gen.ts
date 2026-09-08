@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as FeaturesRouteRouteImport } from './routes/_features/route'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as FeaturesIndexRouteImport } from './routes/_features/index'
+import { Route as FeaturesTimesheetRouteRouteImport } from './routes/_features/timesheet/route'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
@@ -19,6 +20,10 @@ import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as FeaturesAccountsIndexRouteImport } from './routes/_features/accounts/index'
 import { Route as FeaturesSettingsIndexRouteImport } from './routes/_features/settings/index'
 import { Route as FeaturesTimesheetIndexRouteImport } from './routes/_features/timesheet/index'
+import { Route as FeaturesTimesheetActualsRouteImport } from './routes/_features/timesheet/actuals'
+import { Route as FeaturesTimesheetAttendanceRouteImport } from './routes/_features/timesheet/attendance'
+import { Route as FeaturesTimesheetLeavesRouteImport } from './routes/_features/timesheet/leaves'
+import { Route as FeaturesTimesheetLeavesIdRouteImport } from './routes/_features/timesheet/leaves.$id'
 
 const FeaturesRouteRoute = FeaturesRouteRouteImport.update({
   id: '/_features',
@@ -32,6 +37,11 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesTimesheetRouteRoute = FeaturesTimesheetRouteRouteImport.update({
+  id: '/timesheet',
+  path: '/timesheet',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -65,21 +75,49 @@ const FeaturesSettingsIndexRoute = FeaturesSettingsIndexRouteImport.update({
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const FeaturesTimesheetIndexRoute = FeaturesTimesheetIndexRouteImport.update({
-  id: '/timesheet/',
-  path: '/timesheet/',
-  getParentRoute: () => FeaturesRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeaturesTimesheetRouteRoute,
 } as any)
+const FeaturesTimesheetActualsRoute =
+  FeaturesTimesheetActualsRouteImport.update({
+    id: '/actuals',
+    path: '/actuals',
+    getParentRoute: () => FeaturesTimesheetRouteRoute,
+  } as any)
+const FeaturesTimesheetAttendanceRoute =
+  FeaturesTimesheetAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => FeaturesTimesheetRouteRoute,
+  } as any)
+const FeaturesTimesheetLeavesRoute = FeaturesTimesheetLeavesRouteImport.update({
+  id: '/leaves',
+  path: '/leaves',
+  getParentRoute: () => FeaturesTimesheetRouteRoute,
+} as any)
+const FeaturesTimesheetLeavesIdRoute =
+  FeaturesTimesheetLeavesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => FeaturesTimesheetLeavesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/timesheet': typeof FeaturesTimesheetRouteRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/': typeof AuthIndexRoute
+  '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
+  '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
+  '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts/': typeof FeaturesAccountsIndexRoute
   '/settings/': typeof FeaturesSettingsIndexRoute
   '/timesheet/': typeof FeaturesTimesheetIndexRoute
+  '/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -87,35 +125,49 @@ export interface FileRoutesByTo {
   '/auth/signup': typeof AuthSignupRoute
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
+  '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
+  '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts': typeof FeaturesAccountsIndexRoute
   '/settings': typeof FeaturesSettingsIndexRoute
   '/timesheet': typeof FeaturesTimesheetIndexRoute
+  '/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_features': typeof FeaturesRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
+  '/_features/timesheet': typeof FeaturesTimesheetRouteRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/_features/': typeof FeaturesIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_features/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
+  '/_features/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
+  '/_features/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/_features/accounts/': typeof FeaturesAccountsIndexRoute
   '/_features/settings/': typeof FeaturesSettingsIndexRoute
   '/_features/timesheet/': typeof FeaturesTimesheetIndexRoute
+  '/_features/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/'
+    | '/timesheet/actuals'
+    | '/timesheet/attendance'
+    | '/timesheet/leaves'
     | '/accounts/'
     | '/settings/'
     | '/timesheet/'
+    | '/timesheet/leaves/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/reset-password'
@@ -123,21 +175,30 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/'
     | '/auth'
+    | '/timesheet/actuals'
+    | '/timesheet/attendance'
+    | '/timesheet/leaves'
     | '/accounts'
     | '/settings'
     | '/timesheet'
+    | '/timesheet/leaves/$id'
   id:
     | '__root__'
     | '/_features'
     | '/auth'
+    | '/_features/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/_features/'
     | '/auth/'
+    | '/_features/timesheet/actuals'
+    | '/_features/timesheet/attendance'
+    | '/_features/timesheet/leaves'
     | '/_features/accounts/'
     | '/_features/settings/'
     | '/_features/timesheet/'
+    | '/_features/timesheet/leaves/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof FeaturesIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/timesheet': {
+      id: '/_features/timesheet'
+      path: '/timesheet'
+      fullPath: '/timesheet'
+      preLoaderRoute: typeof FeaturesTimesheetRouteRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
     '/auth/': {
@@ -212,26 +280,88 @@ declare module '@tanstack/react-router' {
     }
     '/_features/timesheet/': {
       id: '/_features/timesheet/'
-      path: '/timesheet'
+      path: '/'
       fullPath: '/timesheet/'
       preLoaderRoute: typeof FeaturesTimesheetIndexRouteImport
-      parentRoute: typeof FeaturesRouteRoute
+      parentRoute: typeof FeaturesTimesheetRouteRoute
+    }
+    '/_features/timesheet/actuals': {
+      id: '/_features/timesheet/actuals'
+      path: '/actuals'
+      fullPath: '/timesheet/actuals'
+      preLoaderRoute: typeof FeaturesTimesheetActualsRouteImport
+      parentRoute: typeof FeaturesTimesheetRouteRoute
+    }
+    '/_features/timesheet/attendance': {
+      id: '/_features/timesheet/attendance'
+      path: '/attendance'
+      fullPath: '/timesheet/attendance'
+      preLoaderRoute: typeof FeaturesTimesheetAttendanceRouteImport
+      parentRoute: typeof FeaturesTimesheetRouteRoute
+    }
+    '/_features/timesheet/leaves': {
+      id: '/_features/timesheet/leaves'
+      path: '/leaves'
+      fullPath: '/timesheet/leaves'
+      preLoaderRoute: typeof FeaturesTimesheetLeavesRouteImport
+      parentRoute: typeof FeaturesTimesheetRouteRoute
+    }
+    '/_features/timesheet/leaves/$id': {
+      id: '/_features/timesheet/leaves/$id'
+      path: '/$id'
+      fullPath: '/timesheet/leaves/$id'
+      preLoaderRoute: typeof FeaturesTimesheetLeavesIdRouteImport
+      parentRoute: typeof FeaturesTimesheetLeavesRoute
     }
   }
 }
 
-interface FeaturesRouteRouteChildren {
-  FeaturesIndexRoute: typeof FeaturesIndexRoute
-  FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
-  FeaturesSettingsIndexRoute: typeof FeaturesSettingsIndexRoute
+interface FeaturesTimesheetLeavesRouteChildren {
+  FeaturesTimesheetLeavesIdRoute: typeof FeaturesTimesheetLeavesIdRoute
+}
+
+const FeaturesTimesheetLeavesRouteChildren: FeaturesTimesheetLeavesRouteChildren =
+  {
+    FeaturesTimesheetLeavesIdRoute: FeaturesTimesheetLeavesIdRoute,
+  }
+
+const FeaturesTimesheetLeavesRouteWithChildren =
+  FeaturesTimesheetLeavesRoute._addFileChildren(
+    FeaturesTimesheetLeavesRouteChildren,
+  )
+
+interface FeaturesTimesheetRouteRouteChildren {
+  FeaturesTimesheetActualsRoute: typeof FeaturesTimesheetActualsRoute
+  FeaturesTimesheetAttendanceRoute: typeof FeaturesTimesheetAttendanceRoute
+  FeaturesTimesheetLeavesRoute: typeof FeaturesTimesheetLeavesRouteWithChildren
   FeaturesTimesheetIndexRoute: typeof FeaturesTimesheetIndexRoute
 }
 
+const FeaturesTimesheetRouteRouteChildren: FeaturesTimesheetRouteRouteChildren =
+  {
+    FeaturesTimesheetActualsRoute: FeaturesTimesheetActualsRoute,
+    FeaturesTimesheetAttendanceRoute: FeaturesTimesheetAttendanceRoute,
+    FeaturesTimesheetLeavesRoute: FeaturesTimesheetLeavesRouteWithChildren,
+    FeaturesTimesheetIndexRoute: FeaturesTimesheetIndexRoute,
+  }
+
+const FeaturesTimesheetRouteRouteWithChildren =
+  FeaturesTimesheetRouteRoute._addFileChildren(
+    FeaturesTimesheetRouteRouteChildren,
+  )
+
+interface FeaturesRouteRouteChildren {
+  FeaturesTimesheetRouteRoute: typeof FeaturesTimesheetRouteRouteWithChildren
+  FeaturesIndexRoute: typeof FeaturesIndexRoute
+  FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
+  FeaturesSettingsIndexRoute: typeof FeaturesSettingsIndexRoute
+}
+
 const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
+  FeaturesTimesheetRouteRoute: FeaturesTimesheetRouteRouteWithChildren,
   FeaturesIndexRoute: FeaturesIndexRoute,
   FeaturesAccountsIndexRoute: FeaturesAccountsIndexRoute,
   FeaturesSettingsIndexRoute: FeaturesSettingsIndexRoute,
-  FeaturesTimesheetIndexRoute: FeaturesTimesheetIndexRoute,
 }
 
 const FeaturesRouteRouteWithChildren = FeaturesRouteRoute._addFileChildren(
