@@ -10,7 +10,7 @@ function TimesheetLeavesPage() {
       Hello "/_features/timesheet/leaves"!{" "}
       <Link
         to="/timesheet/leaves/$id"
-        params={{ id: "vacation-leave-09-23-2026" }}
+        params={{ id: "vacation-leave-march-23-2026" }}
       >
         Open sample leave
       </Link>

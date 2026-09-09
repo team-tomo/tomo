@@ -14,7 +14,6 @@ import {
 } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
-import { TokiChat, TokiChatPanel, TokiChatTrigger } from "./-toki-chat"
 
 const TIMESHEET_TABS = [
   {
@@ -62,42 +61,34 @@ function TimesheetLayout() {
   const tab = tabFromPath(pathname)
 
   return (
-    <TokiChat>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-2">
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              const next = TIMESHEET_TABS.find((item) => item.value === value)
-              if (next) {
-                navigate({ to: next.to })
-              }
-            }}
-          >
-            <TabsList>
-              {TIMESHEET_TABS.map((item) => (
-                <TabsTrigger key={item.value} value={item.value}>
-                  <HugeiconsIcon icon={item.icon} className="size-4" />
-                  {item.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="secondary" className="border-border">
-              <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
-              Timesheet Guide
-            </Button>
-            <TokiChatTrigger />
-          </div>
-        </div>
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
-            <Outlet />
-          </div>
-          <TokiChatPanel />
-        </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-2">
+        <Tabs
+          value={tab}
+          onValueChange={(value) => {
+            const next = TIMESHEET_TABS.find((item) => item.value === value)
+            if (next) {
+              navigate({ to: next.to })
+            }
+          }}
+        >
+          <TabsList>
+            {TIMESHEET_TABS.map((item) => (
+              <TabsTrigger key={item.value} value={item.value}>
+                <HugeiconsIcon icon={item.icon} className="size-4" />
+                {item.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Button type="button" variant="secondary" className="border-border">
+          <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
+          Timesheet Guide
+        </Button>
       </div>
-    </TokiChat>
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+        <Outlet />
+      </div>
+    </div>
   )
 }

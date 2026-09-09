@@ -102,10 +102,10 @@ export function TokiChatPanel() {
       >
         <div className="flex shrink-0 flex-col gap-1 p-4">
           <h2 className="font-heading text-sm font-medium text-foreground">
-            Toki - Timekeeping Assistant
+            Toki - Your personal assistant
           </h2>
           <p className="text-xs/relaxed text-balance text-muted-foreground">
-            Ask about your timesheet, attendance, leaves, or actuals.
+            Ask about timesheet, attendance, leaves, and actuals.
           </p>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
@@ -159,7 +159,7 @@ function TokiChatComposer() {
             placeholder="What can we help you with?"
             autoComplete="off"
             rows={1}
-            className="min-h-10 max-h-[calc(3lh+1.25rem)] overflow-y-auto px-3 py-2.5 text-xs/relaxed md:text-xs/relaxed"
+            className="max-h-[calc(4lh+1.25rem)] min-h-10 overflow-y-auto px-3 py-2.5 text-xs/relaxed md:text-xs/relaxed"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault()
