@@ -63,8 +63,8 @@ function TimesheetLayout() {
 
   return (
     <TokiChat>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="sticky top-12 z-10 flex h-12 shrink-0 items-center justify-between border-b px-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-2">
           <Tabs
             value={tab}
             onValueChange={(value) => {
@@ -91,8 +91,8 @@ function TimesheetLayout() {
             <TokiChatTrigger />
           </div>
         </div>
-        <div className="flex min-h-0 flex-1">
-          <div className="min-w-0 flex-1">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
             <Outlet />
           </div>
           <TokiChatPanel />
