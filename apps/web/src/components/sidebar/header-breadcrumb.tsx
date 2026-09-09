@@ -1,4 +1,4 @@
-import { useLocation } from "@tanstack/react-router"
+import { Link, useLocation } from "@tanstack/react-router"
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -40,7 +40,10 @@ export default function HeaderBreadcrumb() {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem className="hidden md:block">
-          <BreadcrumbLink href="/" className="hover:text-sidebar-primary">
+          <BreadcrumbLink
+            render={<Link to="/" />}
+            className="hover:text-sidebar-primary"
+          >
             Home
           </BreadcrumbLink>
         </BreadcrumbItem>
@@ -56,7 +59,10 @@ export default function HeaderBreadcrumb() {
                     {formatLabel(segment)}
                   </BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={href} className="hidden md:block">
+                  <BreadcrumbLink
+                    render={<Link to={href} />}
+                    className="hidden md:block"
+                  >
                     {formatLabel(segment)}
                   </BreadcrumbLink>
                 )}
