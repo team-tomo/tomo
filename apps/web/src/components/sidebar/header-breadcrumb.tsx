@@ -28,7 +28,8 @@ export default function HeaderBreadcrumb() {
               <span className="text-base font-bold text-sidebar-primary">
                 Tomo Platform
               </span>
-              <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" /> Home
+              <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />{" "}
+              Dashboard
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
@@ -44,7 +45,7 @@ export default function HeaderBreadcrumb() {
             render={<Link to="/" />}
             className="hover:text-sidebar-primary"
           >
-            Home
+            Dashboard
           </BreadcrumbLink>
         </BreadcrumbItem>
         {segments.map((segment, index) => {

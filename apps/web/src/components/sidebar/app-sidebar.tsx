@@ -4,7 +4,7 @@ import {
   Calendar03Icon,
   Chart01Icon,
   Chat01Icon,
-  Home04Icon,
+  DashboardSquare01Icon,
   IdentityCardIcon,
   Layers01Icon,
   SpiralsIcon,
@@ -30,9 +30,9 @@ import {
 const data = {
   navMain: [
     {
-      title: "Home",
+      title: "Dashboard",
       url: "/",
-      icon: <HugeiconsIcon icon={Home04Icon} />,
+      icon: <HugeiconsIcon icon={DashboardSquare01Icon} />,
     },
     {
       title: "Workflows",
