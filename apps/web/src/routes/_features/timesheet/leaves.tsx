@@ -8,7 +8,10 @@ function TimesheetLeavesPage() {
   return (
     <div>
       Hello "/_features/timesheet/leaves"!{" "}
-      <Link to="/timesheet/leaves/$id" params={{ id: "VL-09-23-2026" }}>
+      <Link
+        to="/timesheet/leaves/$id"
+        params={{ id: "vacation-leave-09-23-2026" }}
+      >
         Open sample leave
       </Link>
     </div>
