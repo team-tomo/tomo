@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
@@ -13,7 +20,7 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput,
+  InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 import {
   MessageScroller,
@@ -127,18 +134,38 @@ function TokiChatThread() {
 }
 
 function TokiChatComposer() {
+  const { open } = useTokiChat()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    textareaRef.current?.focus()
+  }, [open])
+
   return (
     <form className="shrink-0 p-4" onSubmit={(event) => event.preventDefault()}>
       <Field>
         <FieldLabel htmlFor="toki-message" className="sr-only">
           Message Toki
         </FieldLabel>
-        <InputGroup className="h-10">
-          <InputGroupInput
+        <InputGroup className="min-h-10 items-end">
+          <InputGroupTextarea
+            ref={textareaRef}
             id="toki-message"
             name="message"
             placeholder="What can we help you with?"
             autoComplete="off"
+            rows={1}
+            className="min-h-10 max-h-[calc(3lh+1.25rem)] overflow-y-auto px-3 py-2.5 text-xs/relaxed md:text-xs/relaxed"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault()
+                event.currentTarget.form?.requestSubmit()
+              }
+            }}
           />
           <InputGroupAddon align="inline-end">
             <InputGroupButton
