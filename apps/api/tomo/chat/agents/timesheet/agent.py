@@ -5,7 +5,7 @@ from tomo.chat.deps import ChatDeps
 timesheet_agent = Agent(
     "openai:gpt-4.1-mini",
     name="Hari",
-    description="Attendance, leaves, and actuals for the signed-in user.",
+    description="Today's attendance for the signed-in user: clock-in/out status only.",
     deps_type=ChatDeps,
     instructions=INSTRUCTIONS,
     tools=[],
