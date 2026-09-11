@@ -13,6 +13,7 @@ from supabase import (
 )
 from tomo.account.service import AccountService, account_service
 from tomo.auth.service import AuthService, auth_service
+from tomo.chat.service import ChatService, chat_service
 from tomo.context import AuthContext
 from tomo.core.config import settings
 from tomo.timesheet.service import TimesheetService, timesheet_service
@@ -141,3 +142,11 @@ def get_account_service() -> AccountService:
 
 
 AccountServiceDependency = Annotated[AccountService, Depends(get_account_service)]
+
+
+def get_chat_service() -> ChatService:
+    """Returns the chat service instance."""
+    return chat_service
+
+
+ChatServiceDependency = Annotated[ChatService, Depends(get_chat_service)]

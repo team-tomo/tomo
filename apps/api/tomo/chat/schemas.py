@@ -8,3 +8,8 @@ class ChatRequestSchema(BaseModel):
         min_length=1,
     )
     conversation_id: UUID | None = None
+
+
+class ChatResponseSchema(BaseModel):
+    message: str
+    conversation_id: UUID | None = None
