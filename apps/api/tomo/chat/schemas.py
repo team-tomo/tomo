@@ -7,4 +7,4 @@ class ChatRequestSchema(BaseModel):
     message: str = Field(
         min_length=1,
     )
-    conversation_id: UUID
+    conversation_id: UUID | None = None
