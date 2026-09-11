@@ -59,6 +59,7 @@ class ChatService:
         self, conversation_id: UUID, auth_context: AuthContext, messages
     ):
         """Save conversation history"""
+
         row = {
             "id": str(conversation_id),
             "user_id": auth_context.current_user_id,
