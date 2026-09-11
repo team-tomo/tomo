@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from fastapi.responses import StreamingResponse
 
 from tomo.chat.schemas import ChatRequestSchema
 from tomo.core.rate_limiter import limiter
@@ -16,4 +17,6 @@ async def chat(
     service: ChatServiceDependency,
 ):
     """Chat with the AI assistant."""
-    return await service.chat(payload, auth_context)
+    return StreamingResponse(
+        service.stream(payload, auth_context), media_type="text/event-stream"
+    )
