@@ -1,5 +1,6 @@
 from pydantic_ai import Agent
 from tomo.chat.agents.timesheet.prompts import INSTRUCTIONS
+from tomo.chat.agents.timesheet.tools import get_today_status
 from tomo.chat.deps import ChatDeps
 
 timesheet_agent = Agent(
@@ -8,5 +9,5 @@ timesheet_agent = Agent(
     description="Today's attendance for the signed-in user: clock-in/out status only.",
     deps_type=ChatDeps,
     instructions=INSTRUCTIONS,
-    tools=[],
+    tools=[get_today_status],
 )
