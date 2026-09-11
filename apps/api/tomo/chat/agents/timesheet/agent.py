@@ -10,4 +10,5 @@ timesheet_agent = Agent(
     deps_type=ChatDeps,
     instructions=INSTRUCTIONS,
     tools=[get_today_status],
+    defer_model_check=True,
 )

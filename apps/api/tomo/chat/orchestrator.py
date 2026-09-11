@@ -11,4 +11,5 @@ toki = Agent(
     deps_type=ChatDeps,
     instructions=INSTRUCTIONS,
     capabilities=[SubAgents(agents=[SubAgent(timesheet_agent)])],
+    defer_model_check=True,
 )
