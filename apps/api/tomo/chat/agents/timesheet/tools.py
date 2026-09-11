@@ -1,7 +1,6 @@
 from pydantic_ai import RunContext
 from tomo.chat.deps import ChatDeps
-
-from apps.api.tomo.timesheet.schemas import TodayStatusResponseSchema
+from tomo.timesheet.schemas import TodayStatusResponseSchema
 
 
 async def get_today_status(
