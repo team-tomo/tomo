@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +12,8 @@ class Settings(BaseSettings):
     SUPABASE_PUBLIC_KEY: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     OPENAI_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore", case_sensitive=True
@@ -17,3 +21,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+ai_provider = {
+    "OPENAI_API_KEY": settings.OPENAI_API_KEY,
+    "GOOGLE_API_KEY": settings.GOOGLE_API_KEY,
+    "ANTHROPIC_API_KEY": settings.ANTHROPIC_API_KEY,
+}
+
+for key, value in ai_provider.items():
+    if value:
+        os.environ.setdefault(key, value)
