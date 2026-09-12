@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,3 +10,15 @@ class ChatRequestSchema(BaseModel):
         min_length=1,
     )
     conversation_id: UUID | None = None
+
+
+class ChatMessageSchema(BaseModel):
+    id: str
+    role: Literal["user", "assistant"]
+    text: str
+
+
+class ConversationSchema(BaseModel):
+    id: UUID
+    messages: list[ChatMessageSchema]
+    updated_at: datetime
