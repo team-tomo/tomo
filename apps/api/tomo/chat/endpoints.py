@@ -8,7 +8,7 @@ from tomo.dependencies import AuthContextDependency, ChatServiceDependency
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-@router.post("/")
+@router.post("")
 @limiter.limit("20/minute")
 async def chat(
     request: Request,

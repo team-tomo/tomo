@@ -1,10 +1,12 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
   type ReactNode,
+  type SubmitEvent,
 } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -13,9 +15,19 @@ import {
   Cancel01Icon,
   GoogleGeminiIcon,
 } from "@hugeicons/core-free-icons"
+import { UnauthenticatedError } from "@/lib/api"
+import { sendChatMessage } from "@/services/chat-service"
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "@workspace/ui/components/toast"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+} from "@workspace/ui/components/message"
 import {
   InputGroup,
   InputGroupAddon,
@@ -26,15 +38,25 @@ import {
   MessageScroller,
   MessageScrollerButton,
   MessageScrollerContent,
+  MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@workspace/ui/components/message-scroller"
 
 const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
 
+type ChatMessage = {
+  id: string
+  role: "user" | "assistant"
+  text: string
+}
+
 type TokiChatContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
+  messages: ChatMessage[]
+  isSending: boolean
+  sendMessage: (text: string) => Promise<void>
 }
 
 const TokiChatContext = createContext<TokiChatContextValue | null>(null)
@@ -50,10 +72,68 @@ function useTokiChat() {
 }
 
 export function TokiChat({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<boolean>(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isSending, setIsSending] = useState<boolean>(false)
+  const conversationIdRef = useRef<string | null>(null)
+  const isSendingRef = useRef<boolean>(false)
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (isSendingRef.current) {
+      return
+    }
+
+    const userMessageId = crypto.randomUUID()
+    const assistantMessageId = crypto.randomUUID()
+    isSendingRef.current = true
+
+    setMessages((current) => [
+      ...current,
+      { id: userMessageId, role: "user", text },
+      { id: assistantMessageId, role: "assistant", text: "" },
+    ])
+    setIsSending(true)
+
+    try {
+      await sendChatMessage(conversationIdRef.current, text, (event) => {
+        if (event.type === "conversation") {
+          conversationIdRef.current = event.id
+        }
+        if (event.type === "text") {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantMessageId
+                ? { ...message, text: message.text + event.delta }
+                : message
+            )
+          )
+        }
+      })
+    } catch (error) {
+      if (!(error instanceof UnauthenticatedError)) {
+        toast.add({
+          description:
+            error instanceof Error ? error.message : "Failed to send message",
+          type: "error",
+        })
+      }
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantMessageId && !message.text
+            ? { ...message, text: "Something went wrong. Please try again." }
+            : message
+        )
+      )
+    } finally {
+      isSendingRef.current = false
+      setIsSending(false)
+    }
+  }, [])
 
   return (
-    <TokiChatContext.Provider value={{ open, setOpen }}>
+    <TokiChatContext.Provider
+      value={{ open, setOpen, messages, isSending, sendMessage }}
+    >
       {children}
     </TokiChatContext.Provider>
   )
@@ -118,11 +198,41 @@ export function TokiChatPanel() {
 }
 
 function TokiChatThread() {
+  const { messages } = useTokiChat()
+
   return (
     <MessageScrollerProvider autoScroll>
       <MessageScroller className="min-h-0 flex-1">
         <MessageScrollerViewport className="p-4 [scroll-fade-size:2.5rem]">
-          <MessageScrollerContent className="gap-4" />
+          <MessageScrollerContent className="gap-4">
+            {messages.map((message) => {
+              const isUser = message.role === "user"
+
+              return (
+                <MessageScrollerItem
+                  key={message.id}
+                  messageId={message.id}
+                  scrollAnchor={isUser}
+                >
+                  <Message align={isUser ? "end" : "start"}>
+                    <MessageAvatar>
+                      <Avatar size="sm">
+                        <AvatarFallback>{isUser ? "Y" : "T"}</AvatarFallback>
+                      </Avatar>
+                    </MessageAvatar>
+                    <MessageContent>
+                      <Bubble
+                        variant={isUser ? "default" : "muted"}
+                        align={isUser ? "end" : "start"}
+                      >
+                        <BubbleContent>{message.text || "…"}</BubbleContent>
+                      </Bubble>
+                    </MessageContent>
+                  </Message>
+                </MessageScrollerItem>
+              )
+            })}
+          </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton size="sm" className="rounded-full">
           Scroll to bottom
@@ -134,7 +244,7 @@ function TokiChatThread() {
 }
 
 function TokiChatComposer() {
-  const { open } = useTokiChat()
+  const { open, isSending, sendMessage } = useTokiChat()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -145,8 +255,23 @@ function TokiChatComposer() {
     textareaRef.current?.focus()
   }, [open])
 
+  async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const text = new FormData(event.currentTarget)
+      .get("message")
+      ?.toString()
+      .trim()
+    if (!text || isSending) {
+      return
+    }
+
+    event.currentTarget.reset()
+    await sendMessage(text)
+    textareaRef.current?.focus()
+  }
+
   return (
-    <form className="shrink-0 p-4" onSubmit={(event) => event.preventDefault()}>
+    <form className="shrink-0 p-4" onSubmit={onSubmit}>
       <Field>
         <FieldLabel htmlFor="toki-message" className="sr-only">
           Message Toki
@@ -159,6 +284,7 @@ function TokiChatComposer() {
             placeholder="What can we help you with?"
             autoComplete="off"
             rows={1}
+            disabled={isSending}
             className="max-h-[calc(4lh+1.25rem)] min-h-10 overflow-y-auto px-3 py-2.5 text-xs/relaxed md:text-xs/relaxed"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -173,6 +299,7 @@ function TokiChatComposer() {
               variant="default"
               size="icon-xs"
               aria-label="Send message"
+              disabled={isSending}
               className="rounded-full"
             >
               <HugeiconsIcon icon={ArrowUp02Icon} />
