@@ -10,13 +10,15 @@ import {
 } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Add01Icon,
   ArrowDown01Icon,
   ArrowUp02Icon,
   Cancel01Icon,
   GoogleGeminiIcon,
 } from "@hugeicons/core-free-icons"
+import { useLatestConversation } from "@/hooks/use-chat"
 import { UnauthenticatedError } from "@/lib/api"
-import { sendChatMessage } from "@/services/chat-service"
+import { sendChatMessage, type ChatMessage } from "@/services/chat-service"
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/toast"
@@ -45,18 +47,14 @@ import {
 
 const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
 
-type ChatMessage = {
-  id: string
-  role: "user" | "assistant"
-  text: string
-}
-
 type TokiChatContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
   messages: ChatMessage[]
   isSending: boolean
+  isLoadingHistory: boolean
   sendMessage: (text: string) => Promise<void>
+  startNewConversation: () => void
 }
 
 const TokiChatContext = createContext<TokiChatContextValue | null>(null)
@@ -77,12 +75,56 @@ export function TokiChat({ children }: { children: ReactNode }) {
   const [isSending, setIsSending] = useState<boolean>(false)
   const conversationIdRef = useRef<string | null>(null)
   const isSendingRef = useRef<boolean>(false)
+  const hasHydratedRef = useRef<boolean>(false)
+  const didToastHistoryErrorRef = useRef<boolean>(false)
+
+  const history = useLatestConversation(open)
+
+  useEffect(() => {
+    if (hasHydratedRef.current || !history.isFetched || history.isError) {
+      return
+    }
+
+    hasHydratedRef.current = true
+
+    if (!history.data) {
+      return
+    }
+
+    conversationIdRef.current = history.data.id
+    setMessages(history.data.messages)
+  }, [history.data, history.isFetched, history.isError])
+
+  useEffect(() => {
+    if (!history.isError || didToastHistoryErrorRef.current) {
+      return
+    }
+    if (history.error instanceof UnauthenticatedError) {
+      return
+    }
+
+    didToastHistoryErrorRef.current = true
+    toast.add({
+      description:
+        history.error instanceof Error
+          ? history.error.message
+          : "Failed to load conversation",
+      type: "error",
+    })
+  }, [history.isError, history.error])
+
+  const startNewConversation = useCallback(() => {
+    hasHydratedRef.current = true
+    conversationIdRef.current = null
+    setMessages([])
+  }, [])
 
   const sendMessage = useCallback(async (text: string) => {
     if (isSendingRef.current) {
       return
     }
 
+    hasHydratedRef.current = true
     const userMessageId = crypto.randomUUID()
     const assistantMessageId = crypto.randomUUID()
     isSendingRef.current = true
@@ -132,7 +174,15 @@ export function TokiChat({ children }: { children: ReactNode }) {
 
   return (
     <TokiChatContext.Provider
-      value={{ open, setOpen, messages, isSending, sendMessage }}
+      value={{
+        open,
+        setOpen,
+        messages,
+        isSending,
+        isLoadingHistory: history.isLoading,
+        sendMessage,
+        startNewConversation,
+      }}
     >
       {children}
     </TokiChatContext.Provider>
@@ -159,7 +209,8 @@ export function TokiChatTrigger() {
 }
 
 export function TokiChatPanel() {
-  const { open } = useTokiChat()
+  const { open, messages, isSending, startNewConversation } = useTokiChat()
+  const canStartNew: boolean = messages.length > 0 && !isSending
 
   return (
     <aside
@@ -180,13 +231,25 @@ export function TokiChatPanel() {
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex shrink-0 flex-col gap-1 p-4">
-          <h2 className="font-heading text-sm font-medium text-foreground">
-            Toki - Your personal assistant
-          </h2>
-          <p className="text-xs/relaxed text-balance text-muted-foreground">
-            Ask about timesheet, attendance, leaves, and actuals.
-          </p>
+        <div className="flex shrink-0 items-start justify-between gap-3 p-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-heading text-sm font-medium text-foreground">
+              Toki - Your personal assistant
+            </h2>
+            <p className="text-xs/relaxed text-balance text-muted-foreground">
+              Ask about timesheet, attendance, leaves, and actuals.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="New conversation"
+            disabled={!canStartNew}
+            onClick={startNewConversation}
+          >
+            <HugeiconsIcon icon={Add01Icon} />
+          </Button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
           <TokiChatThread />
@@ -198,7 +261,15 @@ export function TokiChatPanel() {
 }
 
 function TokiChatThread() {
-  const { messages } = useTokiChat()
+  const { messages, isLoadingHistory } = useTokiChat()
+
+  if (isLoadingHistory && messages.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <p className="text-xs text-muted-foreground">Loading conversation…</p>
+      </div>
+    )
+  }
 
   return (
     <MessageScrollerProvider autoScroll>

@@ -71,3 +71,28 @@ export async function sendChatMessage(
     emit(buffer)
   }
 }
+
+export type ChatMessage = {
+  id: string
+  role: "user" | "assistant"
+  text: string
+}
+
+export type ChatConversation = {
+  id: string
+  messages: ChatMessage[]
+  updated_at: string
+}
+
+export async function getLatestConversation(): Promise<ChatConversation | null> {
+  const res = await apiFetch("/chat/latest")
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(
+      body?.detail ?? `Failed to load latest conversation (${res.status})`
+    )
+  }
+
+  return res.json()
+}

@@ -6,7 +6,7 @@ from tomo.chat.deps import ChatDeps
 from tomo.chat.prompts import INSTRUCTIONS
 
 toki = Agent(
-    "openai:gpt-4.1-mini",
+    "openai:gpt-4o-mini",
     name="Toki",
     deps_type=ChatDeps,
     instructions=INSTRUCTIONS,
