@@ -1,11 +1,11 @@
 import logging
 from datetime import datetime, time
-from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
 
 from tomo.context import AuthContext
+from tomo.core.config import APP_TIME_ZONE
 from tomo.timesheet.schemas import (
     ClockInOutResponseSchema,
     ClockOutSchema,
@@ -15,7 +15,6 @@ from tomo.timesheet.schemas import (
 logger = logging.getLogger(__name__)
 
 _LATE_AFTER = time(9, 0, 0)
-_TIME_ZONE = ZoneInfo("Asia/Manila")
 _TIMESHEET = "timesheet"
 
 
@@ -26,7 +25,7 @@ class TimesheetService:
         """Report whether the user can clock in or out today."""
 
         try:
-            today = datetime.now(_TIME_ZONE).date()
+            today = datetime.now(APP_TIME_ZONE).date()
             existing_record = (
                 await auth_context.client.from_(_TIMESHEET)
                 .select("*")
@@ -52,7 +51,7 @@ class TimesheetService:
     async def clock_in(self, auth_context: AuthContext) -> ClockInOutResponseSchema:
         """Clock in the user for the current day."""
 
-        now = datetime.now(_TIME_ZONE)
+        now = datetime.now(APP_TIME_ZONE)
         data = {
             "user_id": auth_context.current_user_id,
             "date": now.date().isoformat(),
@@ -89,7 +88,7 @@ class TimesheetService:
     ) -> ClockInOutResponseSchema:
         """Clock out the user for the current day."""
 
-        now = datetime.now(_TIME_ZONE)
+        now = datetime.now(APP_TIME_ZONE)
         data = {
             "notes": payload.notes,
             "time_out": now.isoformat(),

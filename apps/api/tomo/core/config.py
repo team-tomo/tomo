@@ -1,6 +1,9 @@
 import os
+from zoneinfo import ZoneInfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+APP_TIME_ZONE = ZoneInfo("Asia/Manila")
 
 
 class Settings(BaseSettings):
