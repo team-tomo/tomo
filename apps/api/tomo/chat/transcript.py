@@ -4,6 +4,8 @@ from pydantic_ai.messages import ModelMessage, TextPart, UserPromptPart
 
 from tomo.chat.schemas import ChatMessageSchema
 
+_TITLE_MAX = 60
+
 
 def _user_text(content: object) -> str:
     if isinstance(content, str):
@@ -35,3 +37,16 @@ def to_transcript(messages: Sequence[ModelMessage]) -> list[ChatMessageSchema]:
             )
 
     return bubbles
+
+
+def preview_title(messages: Sequence[ModelMessage]) -> str:
+    """Generate a preview title for a conversation."""
+
+    for bubble in to_transcript(messages):
+        if bubble.role != "user" or not bubble.text:
+            continue
+        text = bubble.text.strip()
+        if len(text) <= _TITLE_MAX:
+            return text
+        return text[: _TITLE_MAX - 1].rstrip() + "…"
+    return "New conversation"
