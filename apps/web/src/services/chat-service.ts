@@ -96,3 +96,37 @@ export async function getLatestConversation(): Promise<ChatConversation | null> 
 
   return res.json()
 }
+
+export type ChatConversationSummary = {
+  id: string
+  title: string
+  updated_at: string
+}
+
+export async function listConversations(): Promise<ChatConversationSummary[]> {
+  const res = await apiFetch("/chat")
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(
+      body?.detail ?? `Failed to load conversations (${res.status})`
+    )
+  }
+
+  return res.json()
+}
+
+export async function getConversation(
+  conversationId: string
+): Promise<ChatConversation> {
+  const res = await apiFetch(`/chat/${conversationId}`)
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(
+      body?.detail ?? `Failed to load conversation (${res.status})`
+    )
+  }
+
+  return res.json()
+}
