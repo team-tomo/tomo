@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Loading03Icon, SaveIcon } from "@hugeicons/core-free-icons"
 import { useAccountProfile, useUpdateProfile } from "@/hooks/use-account"
@@ -76,8 +76,16 @@ export function AccountTab() {
   })
 
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
-  const disableAccount = dangerForm.watch("disable_account")
-  const confirmation = confirmForm.watch("confirmation")
+  const disableAccount = useWatch({
+    control: dangerForm.control,
+    name: "disable_account",
+    defaultValue: false,
+  })
+  const confirmation = useWatch({
+    control: confirmForm.control,
+    name: "confirmation",
+    defaultValue: "",
+  })
 
   const handleConfirmOpenChange = (open: boolean) => {
     setIsConfirmOpen(open)

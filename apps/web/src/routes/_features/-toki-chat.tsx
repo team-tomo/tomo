@@ -71,29 +71,14 @@ function useTokiChat() {
 
 export function TokiChat({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState<boolean>(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [draftMessages, setDraftMessages] = useState<ChatMessage[] | null>(null)
   const [isSending, setIsSending] = useState<boolean>(false)
-  const conversationIdRef = useRef<string | null>(null)
+  const conversationOverrideRef = useRef<string | null | undefined>(undefined)
   const isSendingRef = useRef<boolean>(false)
-  const hasHydratedRef = useRef<boolean>(false)
   const didToastHistoryErrorRef = useRef<boolean>(false)
 
   const history = useLatestConversation(open)
-
-  useEffect(() => {
-    if (hasHydratedRef.current || !history.isFetched || history.isError) {
-      return
-    }
-
-    hasHydratedRef.current = true
-
-    if (!history.data) {
-      return
-    }
-
-    conversationIdRef.current = history.data.id
-    setMessages(history.data.messages)
-  }, [history.data, history.isFetched, history.isError])
+  const messages: ChatMessage[] = draftMessages ?? history.data?.messages ?? []
 
   useEffect(() => {
     if (!history.isError || didToastHistoryErrorRef.current) {
@@ -114,63 +99,68 @@ export function TokiChat({ children }: { children: ReactNode }) {
   }, [history.isError, history.error])
 
   const startNewConversation = useCallback(() => {
-    hasHydratedRef.current = true
-    conversationIdRef.current = null
-    setMessages([])
+    conversationOverrideRef.current = null
+    setDraftMessages([])
   }, [])
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (isSendingRef.current) {
-      return
-    }
-
-    hasHydratedRef.current = true
-    const userMessageId = crypto.randomUUID()
-    const assistantMessageId = crypto.randomUUID()
-    isSendingRef.current = true
-
-    setMessages((current) => [
-      ...current,
-      { id: userMessageId, role: "user", text },
-      { id: assistantMessageId, role: "assistant", text: "" },
-    ])
-    setIsSending(true)
-
-    try {
-      await sendChatMessage(conversationIdRef.current, text, (event) => {
-        if (event.type === "conversation") {
-          conversationIdRef.current = event.id
-        }
-        if (event.type === "text") {
-          setMessages((current) =>
-            current.map((message) =>
-              message.id === assistantMessageId
-                ? { ...message, text: message.text + event.delta }
-                : message
-            )
-          )
-        }
-      })
-    } catch (error) {
-      if (!(error instanceof UnauthenticatedError)) {
-        toast.add({
-          description:
-            error instanceof Error ? error.message : "Failed to send message",
-          type: "error",
-        })
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (isSendingRef.current) {
+        return
       }
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === assistantMessageId && !message.text
-            ? { ...message, text: "Something went wrong. Please try again." }
-            : message
+
+      const conversationId: string | null =
+        conversationOverrideRef.current !== undefined
+          ? conversationOverrideRef.current
+          : (history.data?.id ?? null)
+      const userMessageId = crypto.randomUUID()
+      const assistantMessageId = crypto.randomUUID()
+      isSendingRef.current = true
+
+      setDraftMessages((current) => [
+        ...(current ?? history.data?.messages ?? []),
+        { id: userMessageId, role: "user", text },
+        { id: assistantMessageId, role: "assistant", text: "" },
+      ])
+      setIsSending(true)
+
+      try {
+        await sendChatMessage(conversationId, text, (event) => {
+          if (event.type === "conversation") {
+            conversationOverrideRef.current = event.id
+          }
+          if (event.type === "text") {
+            setDraftMessages((current) =>
+              (current ?? []).map((message) =>
+                message.id === assistantMessageId
+                  ? { ...message, text: message.text + event.delta }
+                  : message
+              )
+            )
+          }
+        })
+      } catch (error) {
+        if (!(error instanceof UnauthenticatedError)) {
+          toast.add({
+            description:
+              error instanceof Error ? error.message : "Failed to send message",
+            type: "error",
+          })
+        }
+        setDraftMessages((current) =>
+          (current ?? []).map((message) =>
+            message.id === assistantMessageId && !message.text
+              ? { ...message, text: "Something went wrong. Please try again." }
+              : message
+          )
         )
-      )
-    } finally {
-      isSendingRef.current = false
-      setIsSending(false)
-    }
-  }, [])
+      } finally {
+        isSendingRef.current = false
+        setIsSending(false)
+      }
+    },
+    [history.data]
+  )
 
   return (
     <TokiChatContext.Provider
@@ -179,7 +169,7 @@ export function TokiChat({ children }: { children: ReactNode }) {
         setOpen,
         messages,
         isSending,
-        isLoadingHistory: history.isLoading,
+        isLoadingHistory: history.isLoading && draftMessages === null,
         sendMessage,
         startNewConversation,
       }}
