@@ -22,3 +22,9 @@ class ConversationSchema(BaseModel):
     id: UUID
     messages: list[ChatMessageSchema]
     updated_at: datetime
+
+
+class ConversationSummarySchema(BaseModel):
+    id: UUID
+    title: str
+    updated_at: datetime

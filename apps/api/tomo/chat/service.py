@@ -11,8 +11,12 @@ from pydantic_ai.messages import ModelMessagesTypeAdapter
 from tomo.account.service import AccountService, account_service
 from tomo.chat.deps import ChatDeps
 from tomo.chat.orchestrator import toki
-from tomo.chat.schemas import ChatRequestSchema, ConversationSchema
-from tomo.chat.transcript import to_transcript
+from tomo.chat.schemas import (
+    ChatRequestSchema,
+    ConversationSchema,
+    ConversationSummarySchema,
+)
+from tomo.chat.transcript import preview_title, to_transcript
 from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
 from tomo.timesheet.service import TimesheetService, timesheet_service
@@ -24,6 +28,12 @@ _CHAT_CONVERSATIONS = "chat_conversations"
 
 def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
+
+
+def _today_start() -> datetime:
+    return datetime.now(APP_TIME_ZONE).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
 
 class ChatService:
@@ -126,16 +136,12 @@ class ChatService:
     ) -> ConversationSchema | None:
         """Return today's most recent conversation, or None if there is no conversation today."""
 
-        today_start = datetime.now(APP_TIME_ZONE).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
         try:
             response = (
                 await auth_context.client.from_(_CHAT_CONVERSATIONS)
                 .select("id, messages, updated_at")
                 .eq("user_id", auth_context.current_user_id)
-                .gte("updated_at", today_start.isoformat())
+                .gte("updated_at", _today_start().isoformat())
                 .order("updated_at", desc=True)
                 .limit(1)
                 .execute()
@@ -149,6 +155,73 @@ class ChatService:
 
         if not response.data:
             return None
+
+        row = response.data[0]
+        history = ModelMessagesTypeAdapter.validate_python(row["messages"])
+        return ConversationSchema(
+            id=row["id"], messages=to_transcript(history), updated_at=row["updated_at"]
+        )
+
+    async def list_conversations(
+        self, auth_context: AuthContext
+    ) -> list[ConversationSummarySchema]:
+        """Return the last 10 conversation of the user"""
+
+        try:
+            response = (
+                await auth_context.client.from_(_CHAT_CONVERSATIONS)
+                .select("id, messages, updated_at")
+                .eq("user_id", auth_context.current_user_id)
+                .order("updated_at", desc=True)
+                .limit(10)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list conversations: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list conversations",
+            )
+
+        summaries: list[ConversationSummarySchema] = []
+        for row in response.data:
+            history = ModelMessagesTypeAdapter.validate_python(row["messages"])
+            summaries.append(
+                ConversationSummarySchema(
+                    id=row["id"],
+                    title=preview_title(history),
+                    updated_at=row["updated_at"],
+                )
+            )
+
+        return summaries
+
+    async def get_conversation(
+        self, conversation_id: UUID, auth_context: AuthContext
+    ) -> ConversationSchema:
+        """Return a conversation by its ID"""
+
+        try:
+            response = (
+                await auth_context.client.from_(_CHAT_CONVERSATIONS)
+                .select("id, messages, updated_at")
+                .eq("id", str(conversation_id))
+                .eq("user_id", auth_context.current_user_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to get conversation: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get conversation",
+            )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
 
         row = response.data[0]
         history = ModelMessagesTypeAdapter.validate_python(row["messages"])
