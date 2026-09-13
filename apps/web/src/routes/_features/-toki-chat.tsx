@@ -8,28 +8,42 @@ import {
   type ReactNode,
   type SubmitEvent,
 } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   ArrowDown01Icon,
   ArrowUp02Icon,
+  BookOpenIcon,
   Cancel01Icon,
   GoogleGeminiIcon,
+  HistoryIcon,
 } from "@hugeicons/core-free-icons"
-import { useLatestConversation } from "@/hooks/use-chat"
+import {
+  chatKeys,
+  useConversations,
+  useLatestConversation,
+} from "@/hooks/use-chat"
 import { UnauthenticatedError } from "@/lib/api"
-import { sendChatMessage, type ChatMessage } from "@/services/chat-service"
+import {
+  getConversation,
+  sendChatMessage,
+  type ChatMessage,
+} from "@/services/chat-service"
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/toast"
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-} from "@workspace/ui/components/message"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
+import { Message, MessageContent } from "@workspace/ui/components/message"
 import {
   InputGroup,
   InputGroupAddon,
@@ -53,8 +67,10 @@ type TokiChatContextValue = {
   messages: ChatMessage[]
   isSending: boolean
   isLoadingHistory: boolean
+  activeConversationId: string | null
   sendMessage: (text: string) => Promise<void>
   startNewConversation: () => void
+  selectConversation: (conversationId: string) => Promise<void>
 }
 
 const TokiChatContext = createContext<TokiChatContextValue | null>(null)
@@ -70,15 +86,23 @@ function useTokiChat() {
 }
 
 export function TokiChat({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState<boolean>(false)
   const [draftMessages, setDraftMessages] = useState<ChatMessage[] | null>(null)
+  const [sessionConversationId, setSessionConversationId] = useState<
+    string | null | undefined
+  >(undefined)
   const [isSending, setIsSending] = useState<boolean>(false)
-  const conversationOverrideRef = useRef<string | null | undefined>(undefined)
+  const [isSelecting, setIsSelecting] = useState<boolean>(false)
   const isSendingRef = useRef<boolean>(false)
   const didToastHistoryErrorRef = useRef<boolean>(false)
 
   const history = useLatestConversation(open)
   const messages: ChatMessage[] = draftMessages ?? history.data?.messages ?? []
+  const activeConversationId: string | null =
+    sessionConversationId !== undefined
+      ? sessionConversationId
+      : (history.data?.id ?? null)
 
   useEffect(() => {
     if (!history.isError || didToastHistoryErrorRef.current) {
@@ -99,9 +123,38 @@ export function TokiChat({ children }: { children: ReactNode }) {
   }, [history.isError, history.error])
 
   const startNewConversation = useCallback(() => {
-    conversationOverrideRef.current = null
+    setSessionConversationId(null)
     setDraftMessages([])
   }, [])
+
+  const selectConversation = useCallback(
+    async (conversationId: string) => {
+      if (isSendingRef.current || conversationId === activeConversationId) {
+        return
+      }
+
+      setIsSelecting(true)
+
+      try {
+        const conversation = await getConversation(conversationId)
+        setSessionConversationId(conversation.id)
+        setDraftMessages(conversation.messages)
+      } catch (error) {
+        if (!(error instanceof UnauthenticatedError)) {
+          toast.add({
+            description:
+              error instanceof Error
+                ? error.message
+                : "Failed to load conversation",
+            type: "error",
+          })
+        }
+      } finally {
+        setIsSelecting(false)
+      }
+    },
+    [activeConversationId]
+  )
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -110,8 +163,8 @@ export function TokiChat({ children }: { children: ReactNode }) {
       }
 
       const conversationId: string | null =
-        conversationOverrideRef.current !== undefined
-          ? conversationOverrideRef.current
+        sessionConversationId !== undefined
+          ? sessionConversationId
           : (history.data?.id ?? null)
       const userMessageId = crypto.randomUUID()
       const assistantMessageId = crypto.randomUUID()
@@ -127,7 +180,7 @@ export function TokiChat({ children }: { children: ReactNode }) {
       try {
         await sendChatMessage(conversationId, text, (event) => {
           if (event.type === "conversation") {
-            conversationOverrideRef.current = event.id
+            setSessionConversationId(event.id)
           }
           if (event.type === "text") {
             setDraftMessages((current) =>
@@ -139,6 +192,7 @@ export function TokiChat({ children }: { children: ReactNode }) {
             )
           }
         })
+        await queryClient.invalidateQueries({ queryKey: chatKeys.list() })
       } catch (error) {
         if (!(error instanceof UnauthenticatedError)) {
           toast.add({
@@ -159,7 +213,7 @@ export function TokiChat({ children }: { children: ReactNode }) {
         setIsSending(false)
       }
     },
-    [history.data]
+    [history.data, queryClient, sessionConversationId]
   )
 
   return (
@@ -169,9 +223,12 @@ export function TokiChat({ children }: { children: ReactNode }) {
         setOpen,
         messages,
         isSending,
-        isLoadingHistory: history.isLoading && draftMessages === null,
+        isLoadingHistory:
+          (history.isLoading && draftMessages === null) || isSelecting,
+        activeConversationId,
         sendMessage,
         startNewConversation,
+        selectConversation,
       }}
     >
       {children}
@@ -221,25 +278,34 @@ export function TokiChatPanel() {
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 p-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-heading text-sm font-medium text-foreground">
-              Toki - Your personal assistant
-            </h2>
-            <p className="text-xs/relaxed text-balance text-muted-foreground">
-              Ask about timesheet, attendance, leaves, and actuals.
-            </p>
+        <div className="flex shrink-0 flex-col gap-3 p-4">
+          <h2 className="font-heading text-sm font-medium text-foreground">
+            Toki - Your personal assistant
+          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <TokiChatHistoryMenu />
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={!canStartNew}
+                onClick={startNewConversation}
+              >
+                <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
+                New conversation
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="border-border"
+            >
+              <HugeiconsIcon icon={BookOpenIcon} data-icon="inline-start" />
+              Toki Guide
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="New conversation"
-            disabled={!canStartNew}
-            onClick={startNewConversation}
-          >
-            <HugeiconsIcon icon={Add01Icon} />
-          </Button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
           <TokiChatThread />
@@ -247,6 +313,87 @@ export function TokiChatPanel() {
         <TokiChatComposer />
       </div>
     </aside>
+  )
+}
+
+function formatConversationTime(updatedAt: string): string {
+  const deltaMs = Date.now() - new Date(updatedAt).getTime()
+  const minutes = Math.max(1, Math.floor(deltaMs / 60_000))
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) {
+    return `${hours}h`
+  }
+
+  return `${Math.floor(hours / 24)}d`
+}
+
+function TokiChatHistoryMenu() {
+  const { open, isSending, activeConversationId, selectConversation } =
+    useTokiChat()
+  const conversations = useConversations(open)
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        disabled={isSending}
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Conversation history"
+          />
+        }
+      >
+        <HugeiconsIcon icon={HistoryIcon} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72 min-w-72">
+        <DropdownMenuGroup className="flex flex-col gap-px">
+          <DropdownMenuLabel>Recent conversations</DropdownMenuLabel>
+          {conversations.isLoading ? (
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              Loading…
+            </p>
+          ) : null}
+          {conversations.isError ? (
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              Could not load conversations
+            </p>
+          ) : null}
+          {!conversations.isLoading &&
+          !conversations.isError &&
+          (conversations.data?.length ?? 0) === 0 ? (
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              No conversations yet
+            </p>
+          ) : null}
+          {conversations.data?.map((conversation) => {
+            const isActive = conversation.id === activeConversationId
+
+            return (
+              <DropdownMenuItem
+                key={conversation.id}
+                className={cn(isActive && "bg-accent")}
+                onClick={() => {
+                  void selectConversation(conversation.id)
+                }}
+              >
+                <span className="flex w-full min-w-0 items-center justify-between gap-3">
+                  <span className="truncate">{conversation.title}</span>
+                  <span className="shrink-0 text-muted-foreground tabular-nums">
+                    {formatConversationTime(conversation.updated_at)}
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -276,11 +423,6 @@ function TokiChatThread() {
                   scrollAnchor={isUser}
                 >
                   <Message align={isUser ? "end" : "start"}>
-                    <MessageAvatar>
-                      <Avatar size="sm">
-                        <AvatarFallback>{isUser ? "Y" : "T"}</AvatarFallback>
-                      </Avatar>
-                    </MessageAvatar>
                     <MessageContent>
                       <Bubble
                         variant={isUser ? "default" : "muted"}
