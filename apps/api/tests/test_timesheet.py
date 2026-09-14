@@ -10,6 +10,8 @@ MANILA = ZoneInfo("Asia/Manila")
 TODAY_STATUS = "/api/v1/timesheet/today-status"
 CLOCK_IN = "/api/v1/timesheet/clock-in"
 CLOCK_OUT = "/api/v1/timesheet/clock-out"
+ATTENDANCE = "/api/v1/timesheet/attendance"
+SUMMARY = "/api/v1/timesheet/attendance/summary"
 
 ON_TIME = datetime(2026, 9, 6, 8, 59, 59, tzinfo=MANILA)
 AT_NINE = datetime(2026, 9, 6, 9, 0, 0, tzinfo=MANILA)
@@ -23,6 +25,23 @@ def _iso(value: datetime) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def _attendance(
+    table,
+    date: str,
+    *,
+    user_id: str = USER_ID,
+    is_late: bool = False,
+    time_out: str | None = None,
+):
+    return table.seed(
+        user_id=user_id,
+        date=date,
+        time_in=f"{date}T00:00:00+00:00",
+        time_out=time_out,
+        is_late=is_late,
+    )
+
+
 class TestUnauthenticated:
     def test_today_status_requires_auth(self) -> None:
         response = TestClient(app).get(TODAY_STATUS)
@@ -34,6 +53,14 @@ class TestUnauthenticated:
 
     def test_clock_out_requires_auth(self) -> None:
         response = TestClient(app).patch(CLOCK_OUT, json={"notes": "done"})
+        assert response.status_code == 401
+
+    def test_attendance_requires_auth(self) -> None:
+        response = TestClient(app).get(ATTENDANCE)
+        assert response.status_code == 401
+
+    def test_attendance_summary_requires_auth(self) -> None:
+        response = TestClient(app).get(SUMMARY)
         assert response.status_code == 401
 
 
@@ -265,3 +292,98 @@ class TestClockOut:
 
         assert response.status_code == 404
         assert table.rows[0]["time_out"] is None
+
+
+class TestListAttendance:
+    def test_empty_list_is_ok(self, api, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+
+        response = api.get(ATTENDANCE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_default_is_this_week_newest_first(self, api, table, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+        _attendance(table, "2026-08-30", time_out="2026-08-30T08:00:00+00:00")
+        monday = _attendance(
+            table, "2026-08-31", time_out="2026-08-31T08:00:00+00:00"
+        )
+        today = _attendance(
+            table, "2026-09-06", time_out="2026-09-06T08:00:00+00:00"
+        )
+        _attendance(table, "2026-09-06", user_id=OTHER_USER_ID)
+
+        response = api.get(ATTENDANCE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert [row["id"] for row in body] == [today["id"], monday["id"]]
+
+    def test_explicit_range_and_single_bound(self, api, table, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+        _attendance(table, "2026-09-01", time_out="2026-09-01T08:00:00+00:00")
+        mid = _attendance(table, "2026-09-03", time_out="2026-09-03T08:00:00+00:00")
+        _attendance(table, "2026-09-05", time_out="2026-09-05T08:00:00+00:00")
+
+        ranged = api.get(
+            ATTENDANCE, params={"from_date": "2026-09-02", "to_date": "2026-09-04"}
+        )
+        assert [row["date"] for row in ranged.json()] == ["2026-09-03"]
+
+        one = api.get(ATTENDANCE, params={"from_date": "2026-09-03"})
+        assert [row["id"] for row in one.json()] == [mid["id"]]
+
+    def test_inverted_range_is_bad_request(self, api, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+
+        response = api.get(
+            ATTENDANCE, params={"from_date": "2026-09-10", "to_date": "2026-09-01"}
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Start date must be on or before end date"
+
+    def test_range_over_31_days_is_bad_request(self, api, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+
+        response = api.get(
+            ATTENDANCE, params={"from_date": "2026-09-01", "to_date": "2026-10-02"}
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Maximum range of days is 31"
+
+
+class TestListAttendanceSummary:
+    def test_empty_list_is_ok(self, api, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+
+        response = api.get(SUMMARY)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_this_year_statuses_oldest_first(self, api, table, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+        _attendance(table, "2025-12-31", time_out="2025-12-31T08:00:00+00:00")
+        _attendance(table, "2026-01-01", time_out="2026-01-01T08:00:00+00:00")
+        _attendance(
+            table,
+            "2026-09-02",
+            is_late=True,
+            time_out="2026-09-02T08:00:00+00:00",
+        )
+        _attendance(table, "2026-09-03")
+        _attendance(table, "2026-09-04", is_late=True)
+        _attendance(table, "2026-09-06", user_id=OTHER_USER_ID)
+
+        response = api.get(SUMMARY)
+
+        assert response.status_code == 200
+        assert response.json() == [
+            {"date": "2026-01-01", "status": "on_time"},
+            {"date": "2026-09-02", "status": "late"},
+            {"date": "2026-09-03", "status": "incomplete"},
+            {"date": "2026-09-04", "status": "late"},
+        ]

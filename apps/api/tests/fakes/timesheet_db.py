@@ -37,8 +37,16 @@ class TimesheetTable:
         stored = self.seed(**data)
         return [deepcopy(stored)]
 
-    def select(self, filters: list[tuple], limit: int | None) -> list[dict]:
+    def select(
+        self,
+        filters: list[tuple],
+        order: tuple[str, bool] | None,
+        limit: int | None,
+    ) -> list[dict]:
         matched = [deepcopy(row) for row in self.rows if _matches(row, filters)]
+        if order is not None:
+            column, descending = order
+            matched.sort(key=lambda row: row[column], reverse=descending)
         if limit is not None:
             return matched[:limit]
         return matched
@@ -87,6 +95,7 @@ class FakeQuery:
         self._action = "select"
         self._payload: dict | None = None
         self._filters: list[tuple] = []
+        self._order: tuple[str, bool] | None = None
         self._limit: int | None = None
 
     def select(self, *_args) -> "FakeQuery":
@@ -106,6 +115,18 @@ class FakeQuery:
         self._filters.append(("eq", column, value))
         return self
 
+    def gte(self, column: str, value) -> "FakeQuery":
+        self._filters.append(("gte", column, value))
+        return self
+
+    def lte(self, column: str, value) -> "FakeQuery":
+        self._filters.append(("lte", column, value))
+        return self
+
+    def order(self, column: str, *, desc: bool = False) -> "FakeQuery":
+        self._order = (column, desc)
+        return self
+
     def is_(self, column: str, value) -> "FakeQuery":
         self._filters.append(("is", column, value))
         return self
@@ -121,7 +142,7 @@ class FakeQuery:
         if self._action == "update":
             assert self._payload is not None
             return FakeResponse(self._table.update(self._payload, self._filters))
-        return FakeResponse(self._table.select(self._filters, self._limit))
+        return FakeResponse(self._table.select(self._filters, self._order, self._limit))
 
 
 def _as_date(value) -> str:
@@ -141,6 +162,12 @@ def _matches(row: dict, filters: list[tuple]) -> bool:
             if column == "date" and _as_date(current) != _as_date(value):
                 return False
             if column != "date" and str(current) != str(value):
+                return False
+        elif op == "gte":
+            if _as_date(current) < _as_date(value):
+                return False
+        elif op == "lte":
+            if _as_date(current) > _as_date(value):
                 return False
         elif op == "is":
             if value in (None, "null") and current is not None:
