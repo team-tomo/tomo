@@ -4,11 +4,17 @@ import {
   clockIn,
   clockOut,
   getTodayAttendanceStatus,
+  listAttendance,
+  listAttendanceSummary,
+  type AttendanceQuery,
 } from "@/services/timesheet-service"
 
 export const attendanceKeys = {
   all: ["attendance"] as const,
   todayStatus: () => [...attendanceKeys.all, "today-status"] as const,
+  summary: () => [...attendanceKeys.all, "summary"] as const,
+  list: (fromDate?: string, toDate?: string) =>
+    [...attendanceKeys.all, "list", fromDate ?? null, toDate ?? null] as const,
 }
 
 export function useTodayAttendanceStatus() {
@@ -32,7 +38,7 @@ export function useClockIn() {
         can_clock_in: false,
         can_clock_out: true,
       })
-      queryClient.invalidateQueries({ queryKey: attendanceKeys.todayStatus() })
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
     },
     onError: (error: Error) => {
       toast.add({
@@ -57,7 +63,7 @@ export function useClockOut() {
         can_clock_in: false,
         can_clock_out: false,
       })
-      queryClient.invalidateQueries({ queryKey: attendanceKeys.todayStatus() })
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
     },
     onError: (error: Error) => {
       toast.add({
@@ -65,5 +71,20 @@ export function useClockOut() {
         type: "error",
       })
     },
+  })
+}
+
+export function useAttendanceSummary() {
+  return useQuery({
+    queryKey: attendanceKeys.summary(),
+    queryFn: listAttendanceSummary,
+  })
+}
+
+export function useAttendance(query: AttendanceQuery = {}, enabled = true) {
+  return useQuery({
+    queryKey: attendanceKeys.list(query.from_date, query.to_date),
+    queryFn: () => listAttendance(query),
+    enabled,
   })
 }
