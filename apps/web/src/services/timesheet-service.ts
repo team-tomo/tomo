@@ -115,7 +115,9 @@ export async function listAttendance(
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.detail ?? `Failed to fetch attendance (${res.status})`)
+    throw new Error(
+      body?.detail ?? `Failed to fetch attendance (${res.status})`
+    )
   }
 
   return res.json()
