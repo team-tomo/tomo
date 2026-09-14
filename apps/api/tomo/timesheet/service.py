@@ -8,6 +8,7 @@ from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
 from tomo.timesheet.schemas import (
     AttendanceQuerySchema,
+    AttendanceSummarySchema,
     ClockInOutResponseSchema,
     ClockOutSchema,
     TodayStatusResponseSchema,
@@ -51,6 +52,22 @@ def _resolve_time_range(query: AttendanceQuerySchema) -> tuple[date, date]:
             detail=f"Maximum range of days is {_MAX_RANGE_DAYS}",
         )
     return start, end
+
+
+def _this_year(today: date) -> tuple[date, date]:
+    """Return Jan 1 through today of the current calendar year."""
+
+    return date(today.year, 1, 1), today
+
+
+def _attendance_status(row: dict) -> str:
+    """Return the attendance status for the given row."""
+
+    if row.get("is_late"):
+        return "late"
+    if not row.get("time_out"):
+        return "incomplete"
+    return "on_time"
 
 
 class TimesheetService:
@@ -205,6 +222,34 @@ class TimesheetService:
             )
 
         return [ClockInOutResponseSchema(**row) for row in response.data]
+
+    async def list_attendance_summary(
+        self, auth_context: AuthContext
+    ) -> list[AttendanceSummarySchema]:
+        """List the attendance summary for the user of the current year."""
+
+        start, end = _this_year(datetime.now(APP_TIME_ZONE).date())
+        try:
+            response = (
+                await auth_context.client.from_(_TIMESHEET)
+                .select("date, is_late, time_out")
+                .eq("user_id", auth_context.current_user_id)
+                .gte("date", start.isoformat())
+                .lte("date", end.isoformat())
+                .order("date")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list attendance summary: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list attendance summary",
+            )
+
+        return [
+            AttendanceSummarySchema(date=row["date"], status=_attendance_status(row))
+            for row in response.data
+        ]
 
 
 timesheet_service = TimesheetService()

@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Request
 
 from tomo.core.rate_limiter import limiter
 from tomo.dependencies import AuthContextDependency, TimesheetServiceDependency
-from tomo.timesheet.schemas import ClockOutSchema
+from tomo.timesheet.schemas import (
+    AttendanceQuerySchema,
+    AttendanceSummarySchema,
+    ClockInOutResponseSchema,
+    ClockOutSchema,
+)
 
 router = APIRouter(prefix="/timesheet", tags=["timesheet"])
 
@@ -39,3 +46,26 @@ async def clock_out(
 ):
     """Clock out the user for the current day."""
     return await service.clock_out(payload, auth_context)
+
+
+@router.get("/attendance/summary")
+@limiter.limit("20/minute")
+async def list_attendance_summary(
+    request: Request,
+    auth_context: AuthContextDependency,
+    service: TimesheetServiceDependency,
+) -> list[AttendanceSummarySchema]:
+    """Return the attendance summary for the user of the current year."""
+    return await service.list_attendance_summary(auth_context)
+
+
+@router.get("/attendance")
+@limiter.limit("20/minute")
+async def list_attendance(
+    request: Request,
+    query: Annotated[AttendanceQuerySchema, Query()],
+    auth_context: AuthContextDependency,
+    service: TimesheetServiceDependency,
+) -> list[ClockInOutResponseSchema]:
+    """List the attendance for the user for the given time range."""
+    return await service.list_attendance(query, auth_context)

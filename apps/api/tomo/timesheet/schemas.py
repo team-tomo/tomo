@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,6 +17,11 @@ class ClockOutSchema(BaseModel):
 class AttendanceQuerySchema(BaseModel):
     from_date: date | None = None
     to_date: date | None = None
+
+
+class AttendanceSummarySchema(BaseModel):
+    date: date
+    status: Literal["on_time", "late", "incomplete"]
 
 
 class ClockInOutResponseSchema(BaseModel):
