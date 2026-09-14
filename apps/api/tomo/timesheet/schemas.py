@@ -13,6 +13,11 @@ class ClockOutSchema(BaseModel):
     notes: str | None = None
 
 
+class AttendanceQuerySchema(BaseModel):
+    from_date: date | None = None
+    to_date: date | None = None
+
+
 class ClockInOutResponseSchema(BaseModel):
     id: UUID
     user_id: UUID

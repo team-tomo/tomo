@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, time
+from datetime import date, datetime, time, timedelta
 
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
@@ -7,6 +7,7 @@ from postgrest.exceptions import APIError
 from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
 from tomo.timesheet.schemas import (
+    AttendanceQuerySchema,
     ClockInOutResponseSchema,
     ClockOutSchema,
     TodayStatusResponseSchema,
@@ -14,8 +15,42 @@ from tomo.timesheet.schemas import (
 
 logger = logging.getLogger(__name__)
 
+_MAX_RANGE_DAYS = 31
 _LATE_AFTER = time(9, 0, 0)
 _TIMESHEET = "timesheet"
+
+
+def _this_week(today: date) -> tuple[date, date]:
+    """Return the start and end dates of the current week."""
+
+    monday = today - timedelta(days=today.weekday())
+    return monday, today
+
+
+def _resolve_time_range(query: AttendanceQuerySchema) -> tuple[date, date]:
+    """Resolve the time range for the attendance query."""
+
+    today = datetime.now(APP_TIME_ZONE).date()
+    start = query.from_date
+    end = query.to_date
+
+    if start is None and end is None:
+        return _this_week(today)
+    if start is None:
+        start = end
+    if end is None:
+        end = start
+    if start > end:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Start date must be on or before end date",
+        )
+    if (end - start).days + 1 > _MAX_RANGE_DAYS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Maximum range of days is {_MAX_RANGE_DAYS}",
+        )
+    return start, end
 
 
 class TimesheetService:
@@ -145,6 +180,31 @@ class TimesheetService:
             )
 
         return ClockInOutResponseSchema(**response.data[0])
+
+    async def list_attendance(
+        self, query: AttendanceQuerySchema, auth_context: AuthContext
+    ) -> list[ClockInOutResponseSchema]:
+        """List the attendance for the user for the given time range."""
+
+        start, end = _resolve_time_range(query)
+        try:
+            response = (
+                await auth_context.client.from_(_TIMESHEET)
+                .select("*")
+                .eq("user_id", auth_context.current_user_id)
+                .gte("date", start.isoformat())
+                .lte("date", end.isoformat())
+                .order("date", desc=True)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list attendance: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list attendance",
+            )
+
+        return [ClockInOutResponseSchema(**row) for row in response.data]
 
 
 timesheet_service = TimesheetService()
