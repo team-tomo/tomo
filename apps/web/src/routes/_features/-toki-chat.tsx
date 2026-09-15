@@ -33,8 +33,17 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import { Markdown } from "@/components/markdown"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { toast } from "@workspace/ui/components/toast"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import {
   DropdownMenu,
@@ -61,6 +70,12 @@ import {
 } from "@workspace/ui/components/message-scroller"
 
 const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
+const EMPTY_ENTER =
+  "animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-300 ease-out motion-reduce:animate-none"
+const SUGGESTIONS = [
+  "Can you draft my weekly actuals?",
+  "Can you get my attendance last week?",
+] as const
 
 type TokiChatContextValue = {
   open: boolean
@@ -257,8 +272,10 @@ export function TokiChatTrigger() {
 }
 
 export function TokiChatPanel() {
-  const { open, messages, isSending, startNewConversation } = useTokiChat()
-  const canStartNew: boolean = messages.length > 0 && !isSending
+  const { open, messages, isSending, isLoadingHistory, startNewConversation } =
+    useTokiChat()
+  const canStartNew: boolean =
+    messages.length > 0 && !isSending && !isLoadingHistory
 
   return (
     <aside
@@ -333,14 +350,19 @@ function formatConversationTime(updatedAt: string): string {
 }
 
 function TokiChatHistoryMenu() {
-  const { open, isSending, activeConversationId, selectConversation } =
-    useTokiChat()
+  const {
+    open,
+    isSending,
+    isLoadingHistory,
+    activeConversationId,
+    selectConversation,
+  } = useTokiChat()
   const conversations = useConversations(open)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        disabled={isSending}
+        disabled={isSending || isLoadingHistory}
         render={
           <Button
             type="button"
@@ -398,17 +420,81 @@ function TokiChatHistoryMenu() {
   )
 }
 
+function TokiChatEmpty() {
+  const { isSending, sendMessage } = useTokiChat()
+
+  return (
+    <Empty className="min-h-0 flex-1 border-0">
+      <EmptyHeader>
+        <EmptyMedia
+          variant="icon"
+          className={cn("size-6 rounded-lg", EMPTY_ENTER)}
+        >
+          <HugeiconsIcon
+            icon={GoogleGeminiIcon}
+            strokeWidth={2}
+            className="size-4"
+          />
+        </EmptyMedia>
+        <EmptyTitle className={cn(EMPTY_ENTER, "delay-100")}>
+          Ask Toki
+        </EmptyTitle>
+        <EmptyDescription className={cn(EMPTY_ENTER, "delay-200")}>
+          Ask me anything that you need help with.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent
+        className={cn(
+          EMPTY_ENTER,
+          "flex-row flex-wrap justify-center delay-300"
+        )}
+      >
+        {SUGGESTIONS.map((prompt) => (
+          <Button
+            key={prompt}
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isSending}
+            className="max-w-full text-left"
+            onClick={() => {
+              void sendMessage(prompt)
+            }}
+          >
+            {prompt}
+          </Button>
+        ))}
+      </EmptyContent>
+    </Empty>
+  )
+}
+
+function TokiChatThreadSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="flex min-h-0 flex-1 flex-col gap-4 p-4"
+    >
+      <span className="sr-only">Loading conversation</span>
+      <Skeleton className="h-8 w-3/4 self-start rounded-lg" />
+      <Skeleton className="h-12 w-2/3 self-end rounded-lg" />
+      <Skeleton className="h-16 w-4/5 self-start rounded-lg" />
+      <Skeleton className="h-8 w-1/2 self-end rounded-lg" />
+    </div>
+  )
+}
+
 function TokiChatThread() {
   const { messages, isLoadingHistory, isSending } = useTokiChat()
 
-  if (isLoadingHistory && messages.length === 0) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-        <p className="shimmer text-xs text-muted-foreground">
-          Loading conversation…
-        </p>
-      </div>
-    )
+  if (isLoadingHistory) {
+    return <TokiChatThreadSkeleton />
+  }
+
+  if (messages.length === 0) {
+    return <TokiChatEmpty />
   }
 
   return (
@@ -422,11 +508,7 @@ function TokiChatThread() {
                 isSending && !isUser && index === messages.length - 1
 
               return (
-                <MessageScrollerItem
-                  key={message.id}
-                  messageId={message.id}
-                  scrollAnchor={isUser}
-                >
+                <MessageScrollerItem key={message.id} messageId={message.id}>
                   <Message align={isUser ? "end" : "start"}>
                     <MessageContent>
                       <Bubble
@@ -466,7 +548,7 @@ function TokiChatThread() {
 }
 
 function TokiChatComposer() {
-  const { open, isSending, sendMessage } = useTokiChat()
+  const { open, isSending, isLoadingHistory, sendMessage } = useTokiChat()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -483,7 +565,7 @@ function TokiChatComposer() {
       .get("message")
       ?.toString()
       .trim()
-    if (!text || isSending) {
+    if (!text || isSending || isLoadingHistory) {
       return
     }
 
@@ -506,7 +588,7 @@ function TokiChatComposer() {
             placeholder="What can we help you with?"
             autoComplete="off"
             rows={1}
-            disabled={isSending}
+            disabled={isSending || isLoadingHistory}
             className="max-h-[calc(4lh+1.25rem)] min-h-10 overflow-y-auto px-3 py-2.5 text-xs/relaxed md:text-xs/relaxed"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -521,7 +603,7 @@ function TokiChatComposer() {
               variant="default"
               size="icon-xs"
               aria-label="Send message"
-              disabled={isSending}
+              disabled={isSending || isLoadingHistory}
               className="rounded-full"
             >
               <HugeiconsIcon icon={ArrowUp02Icon} />
