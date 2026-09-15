@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
+    LOGFIRE_TOKEN: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore", case_sensitive=True
@@ -29,6 +30,7 @@ ai_provider = {
     "OPENAI_API_KEY": settings.OPENAI_API_KEY,
     "GOOGLE_API_KEY": settings.GOOGLE_API_KEY,
     "ANTHROPIC_API_KEY": settings.ANTHROPIC_API_KEY,
+    "LOGFIRE_TOKEN": settings.LOGFIRE_TOKEN,
 }
 
 for key, value in ai_provider.items():

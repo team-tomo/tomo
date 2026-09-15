@@ -1,3 +1,4 @@
+import logfire
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -35,12 +36,21 @@ def create_app() -> FastAPI:
     is_production = settings.ENVIRONMENT == "production"
 
     setup_logging()
+    logfire.configure(
+        service_name="tomo-api",
+        send_to_logfire="if-token-present",
+        advanced=logfire.AdvancedOptions(
+            base_url="https://logfire-us.pydantic.dev",
+        ),
+    )
+    logfire.instrument_pydantic_ai()
     application = FastAPI(
         title="Tomo API",
         docs_url=None if is_production else "/docs",
         redoc_url=None if is_production else "/redoc",
         openapi_url=None if is_production else "/openapi.json",
     )
+    logfire.instrument_fastapi(application)
 
     configure_rate_limiter(application)
     _configure_cors(application)
