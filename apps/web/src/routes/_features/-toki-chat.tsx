@@ -31,6 +31,7 @@ import {
   type ChatMessage,
 } from "@/services/chat-service"
 import { cn } from "@workspace/ui/lib/utils"
+import { Markdown } from "@/components/markdown"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/toast"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
@@ -398,12 +399,14 @@ function TokiChatHistoryMenu() {
 }
 
 function TokiChatThread() {
-  const { messages, isLoadingHistory } = useTokiChat()
+  const { messages, isLoadingHistory, isSending } = useTokiChat()
 
   if (isLoadingHistory && messages.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-        <p className="text-xs text-muted-foreground">Loading conversation…</p>
+        <p className="shimmer text-xs text-muted-foreground">
+          Loading conversation…
+        </p>
       </div>
     )
   }
@@ -413,8 +416,10 @@ function TokiChatThread() {
       <MessageScroller className="min-h-0 flex-1">
         <MessageScrollerViewport className="p-4 [scroll-fade-size:2.5rem]">
           <MessageScrollerContent className="gap-4">
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const isUser = message.role === "user"
+              const isStreaming =
+                isSending && !isUser && index === messages.length - 1
 
               return (
                 <MessageScrollerItem
@@ -428,7 +433,21 @@ function TokiChatThread() {
                         variant={isUser ? "default" : "muted"}
                         align={isUser ? "end" : "start"}
                       >
-                        <BubbleContent>{message.text || "…"}</BubbleContent>
+                        <BubbleContent
+                          className={isUser ? "whitespace-pre-wrap" : undefined}
+                        >
+                          {!message.text ? (
+                            <span className="shimmer text-xs text-muted-foreground">
+                              Loading…
+                            </span>
+                          ) : isUser ? (
+                            message.text
+                          ) : (
+                            <Markdown isAnimating={isStreaming}>
+                              {message.text}
+                            </Markdown>
+                          )}
+                        </BubbleContent>
                       </Bubble>
                     </MessageContent>
                   </Message>

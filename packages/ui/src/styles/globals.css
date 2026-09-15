@@ -7,6 +7,7 @@
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
+@source "../../../apps/web/node_modules/streamdown/dist/*.js";
 
 @theme inline {
     --font-heading: var(--font-sans);
@@ -130,4 +131,54 @@
   html {
     @apply font-sans;
     }
+}
+
+.typeset {
+  --typeset-size: 1em;
+  --typeset-leading: 1.6;
+  --typeset-flow: 0.7em;
+  font-size: var(--typeset-size);
+  line-height: var(--typeset-leading);
+}
+
+.typeset-chat {
+  --typeset-flow: 0.55em;
+  --typeset-leading: 1.55;
+}
+
+.typeset-chat [class*="space-y-"] > :first-child {
+  margin-block-start: 0;
+}
+
+.typeset :where(ul) {
+  list-style: disc;
+  padding-inline-start: 1.2em;
+}
+
+.typeset :where(ol) {
+  list-style: decimal;
+  padding-inline-start: 1.2em;
+}
+
+.typeset :where(strong) {
+  font-weight: 600;
+}
+
+.typeset :where(em) {
+  font-style: italic;
+}
+
+.typeset :where(a) {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.typeset :where(code) {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9em;
+}
+
+.typeset :where(h1, h2, h3, h4) {
+  font-weight: 600;
+  line-height: 1.3;
 }
