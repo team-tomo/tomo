@@ -20,5 +20,9 @@ class ManagerSchema(BaseModel):
     job_title: str | None = None
 
 
+class ReassignManagerSchema(BaseModel):
+    manager_id: UUID
+
+
 class DisableAccountSchema(BaseModel):
     disable_account: bool

@@ -1,10 +1,13 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Request
 
-from tomo.account.schemas import UpdateProfileSchema
+from tomo.account.schemas import ReassignManagerSchema, UpdateProfileSchema
 from tomo.core.rate_limiter import limiter
 from tomo.dependencies import (
     AccountServiceDependency,
     AuthContextDependency,
+    ServiceClientDependency,
 )
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -42,3 +45,22 @@ async def list_managers(
 ):
     """List active Leads and Executives the current Profile may pick."""
     return await service.list_managers(auth_context)
+
+
+@router.patch("/profiles/{profile_id}/manager")
+@limiter.limit("20/minute")
+async def reassign_manager(
+    request: Request,
+    profile_id: UUID,
+    payload: ReassignManagerSchema,
+    auth_context: AuthContextDependency,
+    service_client: ServiceClientDependency,
+    service: AccountServiceDependency,
+):
+    """Admin-only: change another Profile's Manager."""
+    return await service.reassign_manager(
+        str(profile_id),
+        str(payload.manager_id),
+        auth_context,
+        service_client,
+    )
