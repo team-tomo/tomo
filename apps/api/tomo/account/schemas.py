@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -7,6 +9,15 @@ class UpdateProfileSchema(BaseModel):
     bio: str | None = None
     job_title: str | None = None
     phone: str | None = None
+    manager_id: UUID | None = None
+
+
+class ManagerSchema(BaseModel):
+    id: UUID
+    full_name: str | None = None
+    username: str | None = None
+    role: str
+    job_title: str | None = None
 
 
 class DisableAccountSchema(BaseModel):

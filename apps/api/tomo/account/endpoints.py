@@ -31,3 +31,14 @@ async def update_profile(
 ):
     """Update the user's profile."""
     return await service.update_profile(payload, auth_context)
+
+
+@router.get("/managers")
+@limiter.limit("20/minute")
+async def list_managers(
+    request: Request,
+    auth_context: AuthContextDependency,
+    service: AccountServiceDependency,
+):
+    """List active Leads and Executives the current Profile may pick."""
+    return await service.list_managers(auth_context)

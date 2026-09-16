@@ -10,3 +10,4 @@ class UserRole(StrEnum):
 
 
 ADMIN_ROLES = frozenset[UserRole]({UserRole.DEV, UserRole.EXECUTIVE, UserRole.SUPPORT})
+MANAGER_ROLES = frozenset[UserRole]({UserRole.LEAD, UserRole.EXECUTIVE})
