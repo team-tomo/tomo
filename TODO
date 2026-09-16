@@ -17,7 +17,18 @@
   ☐ Submit time entry
   ☐ Create UI for timesheet features
 
+# Agent:
+  ☐ Create subagent for each feature @started(26-09-16 20:24)
+
+# Leave Request:
+  ☐ Setpup leave_requests table
+  ☐ Setup schema, routes, tests and service
+  ☐ Add agent tool for leave
+  ☐ Setup new endpoint for profiles - connected to leave
+
 Archive:
+  ✔ Create main AI agent to delegate task @done(26-09-16 20:24) @project(# Agent)
+  ✔ Chat UI @done(26-09-16 20:24) @project(# Agent)
   ✔ Get today's status of the user @done(26-09-05 20:56) @project(# Timesheet Service)
   ✔ Create timesheet table in supabase @done(26-09-05 20:56) @project(# Timesheet Service)
   ✔ Authentication Page (Sign up, Sign in) @done(26-09-01 17:44) @project(# Auth Service.#Frontend)
