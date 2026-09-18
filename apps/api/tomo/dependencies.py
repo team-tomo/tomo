@@ -147,6 +147,7 @@ AccountServiceDependency = Annotated[AccountService, Depends(get_account_service
 
 def get_chat_service() -> ChatService:
     """Returns the chat service instance."""
+
     return chat_service
 
 
@@ -155,6 +156,7 @@ ChatServiceDependency = Annotated[ChatService, Depends(get_chat_service)]
 
 def get_leave_service() -> LeaveService:
     """Returns the leave service instance."""
+
     return leave_service
 
 
