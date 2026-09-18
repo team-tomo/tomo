@@ -16,6 +16,7 @@ from tomo.auth.service import AuthService, auth_service
 from tomo.chat.service import ChatService, chat_service
 from tomo.context import AuthContext
 from tomo.core.config import settings
+from tomo.leave.service import LeaveService, leave_service
 from tomo.timesheet.service import TimesheetService, timesheet_service
 
 security = HTTPBearer(auto_error=False)
@@ -150,3 +151,11 @@ def get_chat_service() -> ChatService:
 
 
 ChatServiceDependency = Annotated[ChatService, Depends(get_chat_service)]
+
+
+def get_leave_service() -> LeaveService:
+    """Returns the leave service instance."""
+    return leave_service
+
+
+LeaveServiceDependency = Annotated[LeaveService, Depends(get_leave_service)]
