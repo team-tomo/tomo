@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -18,6 +19,7 @@ MANILA = ZoneInfo("Asia/Manila")
 FILE_LEAVE = "/api/v1/leave"
 LIST_LEAVE = "/api/v1/leave"
 TODAY = datetime(2026, 9, 18, 10, 0, tzinfo=MANILA)
+STRANGER_ID = "22222222-3333-4444-8555-666666666666"
 
 
 def _payload(
@@ -88,6 +90,36 @@ def leave_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
 
 
 @pytest.fixture
+def manager_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
+    async def _auth_context() -> AuthContext:
+        return AuthContext(
+            client=FakeLeaveClient(profiles, leaves),
+            current_user_id=OTHER_USER_ID,
+            token="test-token",
+        )
+
+    app.dependency_overrides[get_auth_context] = _auth_context
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def stranger_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
+    async def _auth_context() -> AuthContext:
+        return AuthContext(
+            client=FakeLeaveClient(profiles, leaves),
+            current_user_id=STRANGER_ID,
+            token="test-token",
+        )
+
+    app.dependency_overrides[get_auth_context] = _auth_context
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def freeze_leave(monkeypatch):
     def _freeze(when: datetime) -> datetime:
         class FrozenDateTime(datetime):
@@ -108,6 +140,14 @@ class TestUnauthenticated:
 
     def test_list_leave_requires_auth(self) -> None:
         response = TestClient(app).get(LIST_LEAVE)
+        assert response.status_code == 401
+
+    def test_get_leave_requires_auth(self) -> None:
+        response = TestClient(app).get(f"{FILE_LEAVE}/{uuid4()}")
+        assert response.status_code == 401
+
+    def test_cancel_leave_requires_auth(self) -> None:
+        response = TestClient(app).post(f"{FILE_LEAVE}/{uuid4()}/cancel")
         assert response.status_code == 401
 
 
@@ -313,3 +353,81 @@ class TestListLeave:
         assert len(body) == 1
         assert body[0]["reason"] == "Mine"
         assert body[0]["profile_id"] == USER_ID
+
+
+class TestGetLeave:
+    def test_filer_can_view(self, leave_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = leave_api.get(f"{FILE_LEAVE}/{row['id']}")
+
+        assert response.status_code == 200
+        assert response.json()["id"] == row["id"]
+        assert response.json()["profile_id"] == USER_ID
+
+    def test_manager_can_view(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.get(f"{FILE_LEAVE}/{row['id']}")
+
+        assert response.status_code == 200
+        assert response.json()["id"] == row["id"]
+        assert response.json()["manager_id"] == OTHER_USER_ID
+
+    def test_stranger_cannot_view(self, stranger_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = stranger_api.get(f"{FILE_LEAVE}/{row['id']}")
+
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "You are not authorized to view this leave request"
+        )
+
+    def test_unknown_id_is_not_found(self, leave_api) -> None:
+        response = leave_api.get(f"{FILE_LEAVE}/{uuid4()}")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
+
+
+class TestCancelLeave:
+    def test_filer_cancels_pending(self, leave_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = leave_api.post(f"{FILE_LEAVE}/{row['id']}/cancel")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "cancelled"
+        assert response.json()["id"] == row["id"]
+
+    def test_filer_cannot_cancel_approved(self, leave_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18", status="approved")
+
+        response = leave_api.post(f"{FILE_LEAVE}/{row['id']}/cancel")
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Only pending leave requests can be cancelled"
+
+    def test_manager_cannot_cancel(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/cancel")
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Only filer can cancel a leave request"
+
+    def test_stranger_cannot_cancel(self, stranger_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = stranger_api.post(f"{FILE_LEAVE}/{row['id']}/cancel")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
+
+    def test_unknown_id_is_not_found(self, leave_api) -> None:
+        response = leave_api.post(f"{FILE_LEAVE}/{uuid4()}/cancel")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
