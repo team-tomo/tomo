@@ -17,3 +17,14 @@ async def file_leave_request(
 ) -> LeaveRequestSchema:
     """File a leave request."""
     return await service.file_leave_request(payload, auth_context)
+
+
+@router.get("")
+@limiter.limit("20/minute")
+async def list_leave_requests(
+    request: Request,
+    auth_context: AuthContextDependency,
+    service: LeaveServiceDependency,
+) -> list[LeaveRequestSchema]:
+    """List all leave requests of the current user."""
+    return await service.list_leave_requests(auth_context)

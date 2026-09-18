@@ -17,6 +17,28 @@ logger = logging.getLogger(__name__)
 
 
 class LeaveService:
+    async def list_leave_requests(
+        self, auth_context: AuthContext
+    ) -> list[LeaveRequestSchema]:
+        """List all leave requests of the current user."""
+
+        try:
+            response = (
+                await auth_context.client.from_(_LEAVE_REQUESTS)
+                .select("*")
+                .eq("profile_id", auth_context.current_user_id)
+                .order("date", desc=True)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list leave requests: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list leave requests",
+            )
+
+        return [LeaveRequestSchema(**row) for row in response.data]
+
     async def file_leave_request(
         self, payload: FileLeaveRequestSchema, auth_context: AuthContext
     ) -> LeaveRequestSchema:

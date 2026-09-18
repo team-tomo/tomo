@@ -16,6 +16,7 @@ from tests.fakes.leave_db import (
 
 MANILA = ZoneInfo("Asia/Manila")
 FILE_LEAVE = "/api/v1/leave"
+LIST_LEAVE = "/api/v1/leave"
 TODAY = datetime(2026, 9, 18, 10, 0, tzinfo=MANILA)
 
 
@@ -36,6 +37,26 @@ def _payload(
 
 def _row(table: ProfilesTable, profile_id: str) -> dict:
     return next(row for row in table.rows if row["id"] == profile_id)
+
+
+def _seed_leave(
+    leaves: LeaveRequestsTable,
+    *,
+    profile_id: str = USER_ID,
+    date: str,
+    reason: str = "Family trip",
+    status: str = "pending",
+    manager_id: str = OTHER_USER_ID,
+) -> dict:
+    return leaves.seed(
+        profile_id=profile_id,
+        date=date,
+        leave_type="vl",
+        coverage="whole",
+        reason=reason,
+        status=status,
+        manager_id=manager_id,
+    )
 
 
 @pytest.fixture
@@ -83,6 +104,10 @@ def freeze_leave(monkeypatch):
 class TestUnauthenticated:
     def test_file_leave_requires_auth(self) -> None:
         response = TestClient(app).post(FILE_LEAVE, json=_payload())
+        assert response.status_code == 401
+
+    def test_list_leave_requires_auth(self) -> None:
+        response = TestClient(app).get(LIST_LEAVE)
         assert response.status_code == 401
 
 
@@ -251,3 +276,40 @@ class TestFileLeave:
 
         assert response.status_code == 200
         assert response.json()["profile_id"] == USER_ID
+
+
+class TestListLeave:
+    def test_empty_list(self, leave_api) -> None:
+        response = leave_api.get(LIST_LEAVE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_returns_own_rows_newest_date_first(self, leave_api, leaves) -> None:
+        _seed_leave(leaves, date="2026-09-10", reason="Earlier")
+        _seed_leave(leaves, date="2026-09-18", reason="Later")
+
+        response = leave_api.get(LIST_LEAVE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert [row["date"] for row in body] == ["2026-09-18", "2026-09-10"]
+        assert [row["reason"] for row in body] == ["Later", "Earlier"]
+
+    def test_omits_another_users_rows(self, leave_api, leaves) -> None:
+        _seed_leave(leaves, date="2026-09-18", reason="Mine")
+        _seed_leave(
+            leaves,
+            profile_id=OTHER_USER_ID,
+            date="2026-09-18",
+            reason="Theirs",
+            manager_id=USER_ID,
+        )
+
+        response = leave_api.get(LIST_LEAVE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["reason"] == "Mine"
+        assert body[0]["profile_id"] == USER_ID
