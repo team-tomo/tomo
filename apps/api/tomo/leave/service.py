@@ -1,9 +1,10 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
 
+from supabase import AsyncClient
 from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
 from tomo.enums import MANAGER_ROLES
@@ -78,6 +79,176 @@ class LeaveService:
             )
 
         return LeaveRequestSchema(**response.data[0])
+
+    async def list_leave_inbox(
+        self, auth_context: AuthContext, service_client: AsyncClient
+    ) -> list[LeaveRequestSchema]:
+        """Pending Leave Requests the current Profile may decide."""
+
+        caller = await self._get_profile_row(
+            auth_context.current_user_id, service_client
+        )
+        if (
+            caller is None
+            or not caller.get("is_active")
+            or caller.get("role") not in MANAGER_ROLES
+        ):
+            return []
+
+        try:
+            response = (
+                await service_client.from_(_LEAVE_REQUESTS)
+                .select("*")
+                .eq("status", "pending")
+                .order("date", desc=True)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list leave inbox: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list leave inbox",
+            )
+
+        visible: list[LeaveRequestSchema] = []
+        for row in response.data:
+            if await self._caller_may_decide(row, caller, service_client):
+                visible.append(LeaveRequestSchema(**row))
+        return visible
+
+    async def decide_leave_request(
+        self,
+        leave_id: str,
+        decision: str,
+        auth_context: AuthContext,
+        service_client: AsyncClient,
+    ) -> LeaveRequestSchema:
+        """Approve or reject a pending leave request."""
+
+        row = await self._load_leave_request_row(leave_id, service_client)
+        caller = await self._get_profile_row(
+            auth_context.current_user_id, service_client
+        )
+
+        if not await self._caller_may_decide(row, caller, service_client):
+            if (
+                row["profile_id"] == auth_context.current_user_id
+                or row["manager_id"] == auth_context.current_user_id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not authorized to decide this leave request",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Leave request not found",
+            )
+
+        if row["status"] != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only a pending leave request can be decided",
+            )
+
+        try:
+            response = (
+                await service_client.from_(_LEAVE_REQUESTS)
+                .update(
+                    {
+                        "status": decision,
+                        "decided_by": auth_context.current_user_id,
+                        "decided_at": datetime.now(UTC).isoformat(),
+                    }
+                )
+                .eq("id", leave_id)
+                .eq("status", "pending")
+                .select("*")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to decide leave request: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to decide leave request",
+            )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only a pending leave request can be decided",
+            )
+
+        return LeaveRequestSchema(**response.data[0])
+
+    async def _caller_may_decide(
+        self, row: dict, caller: dict | None, service_client: AsyncClient
+    ) -> bool:
+        """Assigned Manager while they are eligible; otherwise any other Manager except the filer."""
+
+        if caller is None:
+            return False
+        if row["profile_id"] == caller["id"]:
+            return False
+        if not caller.get("is_active") or caller.get("role") not in MANAGER_ROLES:
+            return False
+
+        assigned = await self._get_profile_row(row["manager_id"], service_client)
+        assigned_active = (
+            assigned is not None
+            and assigned.get("is_active")
+            and assigned.get("role") in MANAGER_ROLES
+        )
+        if assigned_active:
+            return row["manager_id"] == caller["id"]
+        return True
+
+    async def _load_leave_request_row(self, leave_id: str, client: AsyncClient) -> dict:
+        """Load a Leave Request by id, ignoring RLS."""
+
+        try:
+            response = (
+                await client.from_(_LEAVE_REQUESTS)
+                .select("*")
+                .eq("id", leave_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to load leave request: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to load leave request",
+            )
+
+        row = response.data[0] if response.data else None
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Leave request not found",
+            )
+        return row
+
+    async def _get_profile_row(
+        self, profile_id: str, client: AsyncClient
+    ) -> dict | None:
+        """Load a Profile by id."""
+
+        try:
+            response = (
+                await client.from_(_PROFILES)
+                .select("id, manager_id, role, is_active")
+                .eq("id", profile_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to get profile: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get profile: {e}",
+            )
+
+        return response.data[0] if response.data else None
 
     async def _load_leave_request(
         self, leave_id: str, auth_context: AuthContext
