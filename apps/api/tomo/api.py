@@ -4,6 +4,7 @@ from tomo.account.endpoints import router as account_router
 from tomo.auth.endpoints import router as auth_router
 from tomo.chat.endpoints import router as chat_router
 from tomo.healthz.endpoints import router as healthz_router
+from tomo.leave.endpoints import router as leave_router
 from tomo.timesheet.endpoints import router as timesheet_router
 
 router = APIRouter(prefix="/api/v1")
@@ -18,3 +19,5 @@ router.include_router(timesheet_router)
 router.include_router(account_router)
 # /api/v1/chat - chat endpoints
 router.include_router(chat_router)
+# /api/v1/leave - leave endpoints
+router.include_router(leave_router)
