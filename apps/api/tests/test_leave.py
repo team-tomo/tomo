@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi.testclient import TestClient
 from tomo.context import AuthContext
-from tomo.dependencies import get_auth_context
+from tomo.dependencies import get_auth_context, get_service_client
 from tomo.main import app
 
 from tests.conftest import OTHER_USER_ID, USER_ID
@@ -18,8 +18,10 @@ from tests.fakes.leave_db import (
 MANILA = ZoneInfo("Asia/Manila")
 FILE_LEAVE = "/api/v1/leave"
 LIST_LEAVE = "/api/v1/leave"
+INBOX_LEAVE = "/api/v1/leave/inbox"
 TODAY = datetime(2026, 9, 18, 10, 0, tzinfo=MANILA)
 STRANGER_ID = "22222222-3333-4444-8555-666666666666"
+OTHER_MANAGER_ID = "33333333-4444-4555-8666-777777777777"
 
 
 def _payload(
@@ -61,11 +63,32 @@ def _seed_leave(
     )
 
 
+def _override_leave_client(
+    profiles: ProfilesTable, leaves: LeaveRequestsTable, user_id: str
+) -> None:
+    fake = FakeLeaveClient(profiles, leaves)
+
+    async def _auth_context() -> AuthContext:
+        return AuthContext(
+            client=fake,
+            current_user_id=user_id,
+            token="test-token",
+        )
+
+    async def _service_client() -> FakeLeaveClient:
+        return fake
+
+    app.dependency_overrides[get_auth_context] = _auth_context
+    app.dependency_overrides[get_service_client] = _service_client
+
+
 @pytest.fixture
 def profiles() -> ProfilesTable:
     table = ProfilesTable()
     table.seed(id=OTHER_USER_ID, role="lead", is_active=True)
     table.seed(id=USER_ID, role="ic", is_active=True, manager_id=OTHER_USER_ID)
+    table.seed(id=OTHER_MANAGER_ID, role="executive", is_active=True)
+    table.seed(id=STRANGER_ID, role="ic", is_active=True)
     return table
 
 
@@ -76,14 +99,7 @@ def leaves() -> LeaveRequestsTable:
 
 @pytest.fixture
 def leave_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
-    async def _auth_context() -> AuthContext:
-        return AuthContext(
-            client=FakeLeaveClient(profiles, leaves),
-            current_user_id=USER_ID,
-            token="test-token",
-        )
-
-    app.dependency_overrides[get_auth_context] = _auth_context
+    _override_leave_client(profiles, leaves, USER_ID)
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
@@ -91,14 +107,15 @@ def leave_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
 
 @pytest.fixture
 def manager_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
-    async def _auth_context() -> AuthContext:
-        return AuthContext(
-            client=FakeLeaveClient(profiles, leaves),
-            current_user_id=OTHER_USER_ID,
-            token="test-token",
-        )
+    _override_leave_client(profiles, leaves, OTHER_USER_ID)
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.clear()
 
-    app.dependency_overrides[get_auth_context] = _auth_context
+
+@pytest.fixture
+def other_manager_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
+    _override_leave_client(profiles, leaves, OTHER_MANAGER_ID)
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
@@ -106,14 +123,7 @@ def manager_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
 
 @pytest.fixture
 def stranger_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
-    async def _auth_context() -> AuthContext:
-        return AuthContext(
-            client=FakeLeaveClient(profiles, leaves),
-            current_user_id=STRANGER_ID,
-            token="test-token",
-        )
-
-    app.dependency_overrides[get_auth_context] = _auth_context
+    _override_leave_client(profiles, leaves, STRANGER_ID)
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
@@ -148,6 +158,18 @@ class TestUnauthenticated:
 
     def test_cancel_leave_requires_auth(self) -> None:
         response = TestClient(app).post(f"{FILE_LEAVE}/{uuid4()}/cancel")
+        assert response.status_code == 401
+
+    def test_inbox_requires_auth(self) -> None:
+        response = TestClient(app).get(INBOX_LEAVE)
+        assert response.status_code == 401
+
+    def test_approve_leave_requires_auth(self) -> None:
+        response = TestClient(app).post(f"{FILE_LEAVE}/{uuid4()}/approve")
+        assert response.status_code == 401
+
+    def test_reject_leave_requires_auth(self) -> None:
+        response = TestClient(app).post(f"{FILE_LEAVE}/{uuid4()}/reject")
         assert response.status_code == 401
 
 
@@ -431,3 +453,218 @@ class TestCancelLeave:
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Leave request not found"
+
+
+class TestLeaveInbox:
+    def test_empty_when_nothing_to_decide(self, manager_api) -> None:
+        response = manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_ic_inbox_is_empty(self, leave_api, leaves) -> None:
+        _seed_leave(leaves, date="2026-09-18")
+
+        response = leave_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_assigned_manager_sees_pending(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["id"] == row["id"]
+        assert body[0]["status"] == "pending"
+
+    def test_omits_already_decided(self, manager_api, leaves) -> None:
+        _seed_leave(leaves, date="2026-09-10", status="approved")
+        pending = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert [row["id"] for row in body] == [pending["id"]]
+
+    def test_omits_another_managers_pending_while_they_are_active(
+        self, other_manager_api, leaves
+    ) -> None:
+        _seed_leave(leaves, date="2026-09-18")
+
+        response = other_manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_includes_pending_when_assigned_manager_is_inactive(
+        self, other_manager_api, profiles, leaves
+    ) -> None:
+        _row(profiles, OTHER_USER_ID)["is_active"] = False
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = other_manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["id"] == row["id"]
+
+    def test_omits_own_filings(self, manager_api, leaves) -> None:
+        _seed_leave(
+            leaves,
+            profile_id=OTHER_USER_ID,
+            date="2026-09-18",
+            manager_id=OTHER_MANAGER_ID,
+        )
+
+        response = manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_newest_date_first(self, manager_api, leaves) -> None:
+        _seed_leave(leaves, date="2026-09-10", reason="Earlier")
+        _seed_leave(leaves, date="2026-09-18", reason="Later")
+
+        response = manager_api.get(INBOX_LEAVE)
+
+        assert response.status_code == 200
+        assert [row["date"] for row in response.json()] == ["2026-09-18", "2026-09-10"]
+
+
+class TestDecideLeave:
+    def test_assigned_manager_approves(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "approved"
+        assert body["decided_by"] == OTHER_USER_ID
+        assert body["decided_at"] is not None
+
+    def test_assigned_manager_rejects(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/reject")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "rejected"
+        assert body["decided_by"] == OTHER_USER_ID
+        assert body["decided_at"] is not None
+
+    def test_filer_cannot_decide(self, leave_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = leave_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "You are not authorized to decide this leave request"
+        )
+
+    def test_other_manager_cannot_decide_while_assigned_is_active(
+        self, other_manager_api, leaves
+    ) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = other_manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
+
+    def test_other_manager_approves_when_assigned_is_inactive(
+        self, other_manager_api, profiles, leaves
+    ) -> None:
+        _row(profiles, OTHER_USER_ID)["is_active"] = False
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = other_manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "approved"
+        assert body["decided_by"] == OTHER_MANAGER_ID
+
+    def test_other_manager_rejects_when_assigned_is_inactive(
+        self, other_manager_api, profiles, leaves
+    ) -> None:
+        _row(profiles, OTHER_USER_ID)["is_active"] = False
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = other_manager_api.post(f"{FILE_LEAVE}/{row['id']}/reject")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "rejected"
+        assert response.json()["decided_by"] == OTHER_MANAGER_ID
+
+    def test_cannot_decide_already_approved(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18", status="approved")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "Only a pending leave request can be decided"
+        )
+
+    def test_cannot_decide_cancelled(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18", status="cancelled")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/reject")
+
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "Only a pending leave request can be decided"
+        )
+
+    def test_stranger_cannot_decide(self, stranger_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = stranger_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
+
+    def test_inactive_assigned_manager_cannot_decide(
+        self, manager_api, profiles, leaves
+    ) -> None:
+        _row(profiles, OTHER_USER_ID)["is_active"] = False
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "You are not authorized to decide this leave request"
+        )
+
+    def test_unknown_id_is_not_found(self, manager_api) -> None:
+        response = manager_api.post(f"{FILE_LEAVE}/{uuid4()}/approve")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Leave request not found"
+
+    def test_second_decision_is_rejected(self, manager_api, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        first = manager_api.post(f"{FILE_LEAVE}/{row['id']}/approve")
+        second = manager_api.post(f"{FILE_LEAVE}/{row['id']}/reject")
+
+        assert first.status_code == 200
+        assert second.status_code == 400
+        assert (
+            second.json()["detail"]
+            == "Only a pending leave request can be decided"
+        )
