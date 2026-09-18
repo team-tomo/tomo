@@ -17,6 +17,104 @@ logger = logging.getLogger(__name__)
 
 
 class LeaveService:
+    async def get_leave_request(
+        self, leave_id: str, auth_context: AuthContext
+    ) -> LeaveRequestSchema:
+        """Return a leave request the current profile may see."""
+
+        row = await self._load_leave_request(leave_id, auth_context)
+        if not self._can_view_leave_request(row, auth_context.current_user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to view this leave request",
+            )
+
+        return LeaveRequestSchema(**row)
+
+    async def cancel_leave_request(
+        self, leave_id: str, auth_context: AuthContext
+    ) -> LeaveRequestSchema:
+        """Cancel a pending leave request. Filer only"""
+
+        row = await self._load_leave_request(leave_id, auth_context)
+        if row["profile_id"] != auth_context.current_user_id:
+            if self._can_view_leave_request(row, auth_context.current_user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only filer can cancel a leave request",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Leave request not found",
+            )
+
+        if row["status"] != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only pending leave requests can be cancelled",
+            )
+
+        try:
+            response = (
+                await auth_context.client.from_(_LEAVE_REQUESTS)
+                .update({"status": "cancelled"})
+                .eq("id", leave_id)
+                .eq("profile_id", auth_context.current_user_id)
+                .eq("status", "pending")
+                .select("*")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to cancel leave request: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to cancel leave request",
+            )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only a pending leave request can be cancelled",
+            )
+
+        return LeaveRequestSchema(**response.data[0])
+
+    async def _load_leave_request(
+        self, leave_id: str, auth_context: AuthContext
+    ) -> dict:
+        """Load leave request by id."""
+
+        try:
+            response = (
+                await auth_context.client.from_(_LEAVE_REQUESTS)
+                .select("*")
+                .eq("id", leave_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to load leave request: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to load leave request",
+            )
+
+        row = response.data[0] if response.data else None
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Leave request not found",
+            )
+
+        return row
+
+    def _can_view_leave_request(self, row: dict, current_user_id: str) -> bool:
+        """Check if the current user can view the leave request."""
+
+        return (
+            row["profile_id"] == current_user_id or row["manager_id"] == current_user_id
+        )
+
     async def list_leave_requests(
         self, auth_context: AuthContext
     ) -> list[LeaveRequestSchema]:

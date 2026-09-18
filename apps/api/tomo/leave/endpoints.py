@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Request
 
 from tomo.core.rate_limiter import limiter
@@ -28,3 +30,27 @@ async def list_leave_requests(
 ) -> list[LeaveRequestSchema]:
     """List all leave requests of the current user."""
     return await service.list_leave_requests(auth_context)
+
+
+@router.get("/{leave_id}")
+@limiter.limit("20/minute")
+async def get_leave_request(
+    request: Request,
+    leave_id: UUID,
+    auth_context: AuthContextDependency,
+    service: LeaveServiceDependency,
+) -> LeaveRequestSchema:
+    """Get a leave request by id."""
+    return await service.get_leave_request(str(leave_id), auth_context)
+
+
+@router.post("/{leave_id}/cancel")
+@limiter.limit("20/minute")
+async def cancel_leave_request(
+    request: Request,
+    leave_id: UUID,
+    auth_context: AuthContextDependency,
+    service: LeaveServiceDependency,
+) -> LeaveRequestSchema:
+    """Cancel a pending leave request. Filer only."""
+    return await service.cancel_leave_request(str(leave_id), auth_context)
