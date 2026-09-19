@@ -9,7 +9,7 @@ from postgrest.exceptions import APIError
 from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 from tomo.account.service import AccountService, account_service
-from tomo.chat.deps import ChatDeps
+from tomo.chat.deps import ChatDeps, LeaveDrafts
 from tomo.chat.orchestrator import momo
 from tomo.chat.schemas import (
     ChatRequestSchema,
@@ -19,6 +19,7 @@ from tomo.chat.schemas import (
 from tomo.chat.transcript import preview_title, to_transcript
 from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
+from tomo.leave.service import LeaveService, leave_service
 from tomo.timesheet.service import TimesheetService, timesheet_service
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,14 @@ def _today_start() -> datetime:
 
 class ChatService:
     def __init__(
-        self, timesheet_service: TimesheetService, account_service: AccountService
+        self,
+        timesheet_service: TimesheetService,
+        account_service: AccountService,
+        leave_service: LeaveService,
     ):
         self._timesheet_service = timesheet_service
         self._account_service = account_service
+        self._leave_service = leave_service
 
     async def _load_history(
         self, conversation_id: UUID, auth_context: AuthContext, *, must_exist: bool
@@ -110,6 +115,8 @@ class ChatService:
             auth_context=auth_context,
             timesheet_service=self._timesheet_service,
             account_service=self._account_service,
+            leave_service=self._leave_service,
+            leave_drafts=LeaveDrafts(),
         )
         yield _sse({"type": "conversation", "id": str(conversation_id)})
 
@@ -128,6 +135,9 @@ class ChatService:
             logger.exception("Failed to chat with the user.")
             yield _sse({"type": "error", "detail": "Failed to chat with the user."})
             return
+
+        for draft in deps.leave_drafts.items:
+            yield _sse({"type": "leave_draft", **draft})
 
         yield _sse({"type": "done"})
 
@@ -230,4 +240,4 @@ class ChatService:
         )
 
 
-chat_service = ChatService(timesheet_service, account_service)
+chat_service = ChatService(timesheet_service, account_service, leave_service)
