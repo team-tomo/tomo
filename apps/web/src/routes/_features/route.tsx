@@ -21,7 +21,11 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@workspace/ui/components/sidebar"
-import { MomoChat, MomoChatPanel, MomoChatTrigger } from "./-momo-chat"
+import {
+  MomoChat,
+  MomoChatPanel,
+  MomoChatTrigger,
+} from "@/components/chat/momo-chat"
 import {
   Field,
   FieldDescription,

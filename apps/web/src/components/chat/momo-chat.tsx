@@ -29,9 +29,12 @@ import {
   getConversation,
   sendChatMessage,
   type ChatMessage,
+  type LeaveDraft,
 } from "@/services/chat-service"
+import { fileLeave } from "@/services/leave-service"
 import { cn } from "@workspace/ui/lib/utils"
 import { Markdown } from "@/components/markdown"
+import { LeaveDraftCard } from "@/components/chat/leave-draft-card"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { toast } from "@workspace/ui/components/toast"
@@ -69,6 +72,35 @@ import {
   MessageScrollerViewport,
 } from "@workspace/ui/components/message-scroller"
 
+function patchLeaveDraft(
+  messages: ChatMessage[],
+  messageId: string,
+  index: number,
+  patch: (draft: LeaveDraft) => LeaveDraft
+): ChatMessage[] {
+  return messages.map((message) => {
+    if (message.id !== messageId || !message.leaveDrafts) {
+      return message
+    }
+    return {
+      ...message,
+      leaveDrafts: message.leaveDrafts.map((draft, draftIndex) =>
+        draftIndex === index ? patch(draft) : draft
+      ),
+    }
+  })
+}
+
+function filingErrorMessage(error: unknown): string {
+  if (error instanceof DOMException && error.name === "TimeoutError") {
+    return "Request timed out"
+  }
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return "Failed to file leave"
+}
+
 const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
 const EMPTY_ENTER =
   "animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-300 ease-out motion-reduce:animate-none"
@@ -85,6 +117,8 @@ type MomoChatContextValue = {
   isLoadingHistory: boolean
   activeConversationId: string | null
   sendMessage: (text: string) => Promise<void>
+  confirmLeaveDraft: (messageId: string, index: number) => Promise<void>
+  dismissLeaveDraft: (messageId: string, index: number) => void
   startNewConversation: () => void
   selectConversation: (conversationId: string) => Promise<void>
 }
@@ -112,9 +146,12 @@ export function MomoChat({ children }: { children: ReactNode }) {
   const [isSelecting, setIsSelecting] = useState<boolean>(false)
   const isSendingRef = useRef<boolean>(false)
   const didToastHistoryErrorRef = useRef<boolean>(false)
+  const messagesRef = useRef<ChatMessage[]>([])
+  const filingKeysRef = useRef(new Set<string>())
 
   const history = useLatestConversation(open)
   const messages: ChatMessage[] = draftMessages ?? history.data?.messages ?? []
+  messagesRef.current = messages
   const activeConversationId: string | null =
     sessionConversationId !== undefined
       ? sessionConversationId
@@ -207,6 +244,25 @@ export function MomoChat({ children }: { children: ReactNode }) {
               )
             )
           }
+          if (event.type === "leave_draft") {
+            const draft: LeaveDraft = {
+              date: event.date,
+              leave_type: event.leave_type,
+              coverage: event.coverage,
+              reason: event.reason,
+              status: "pending",
+            }
+            setDraftMessages((current) =>
+              (current ?? []).map((message) =>
+                message.id === assistantMessageId
+                  ? {
+                      ...message,
+                      leaveDrafts: [...(message.leaveDrafts ?? []), draft],
+                    }
+                  : message
+              )
+            )
+          }
         })
         await queryClient.invalidateQueries({ queryKey: chatKeys.list() })
       } catch (error) {
@@ -232,6 +288,81 @@ export function MomoChat({ children }: { children: ReactNode }) {
     [history.data, queryClient, sessionConversationId]
   )
 
+  const dismissLeaveDraft = useCallback((messageId: string, index: number) => {
+    setDraftMessages((current) =>
+      (current ?? []).map((message) => {
+        if (message.id !== messageId || !message.leaveDrafts) {
+          return message
+        }
+        return {
+          ...message,
+          leaveDrafts: message.leaveDrafts.map((draft, draftIndex) =>
+            draftIndex === index
+              ? { ...draft, status: "dismissed", error: undefined }
+              : draft
+          ),
+        }
+      })
+    )
+  }, [])
+
+  const confirmLeaveDraft = useCallback(
+    async (messageId: string, index: number) => {
+      const key = `${messageId}:${index}`
+      if (filingKeysRef.current.has(key)) {
+        return
+      }
+
+      const payload = messagesRef.current
+        .find((message) => message.id === messageId)
+        ?.leaveDrafts?.[index]
+      if (!payload || payload.status !== "pending") {
+        return
+      }
+
+      filingKeysRef.current.add(key)
+      setDraftMessages((current) =>
+        patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
+          ...draft,
+          isFiling: true,
+          error: undefined,
+        }))
+      )
+
+      try {
+        await fileLeave({
+          date: payload.date,
+          leave_type: payload.leave_type,
+          coverage: payload.coverage,
+          reason: payload.reason,
+        })
+        setDraftMessages((current) =>
+          patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
+            ...draft,
+            status: "filed",
+            isFiling: false,
+            error: undefined,
+          }))
+        )
+      } catch (error) {
+        const detail = filingErrorMessage(error)
+        setDraftMessages((current) =>
+          patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
+            ...draft,
+            isFiling: false,
+            error: error instanceof UnauthenticatedError ? undefined : detail,
+          }))
+        )
+        if (!(error instanceof UnauthenticatedError)) {
+          toast.add({ description: detail, type: "error" })
+        }
+      } finally {
+        filingKeysRef.current.delete(key)
+      }
+    },
+    []
+  )
+
   return (
     <MomoChatContext.Provider
       value={{
@@ -243,6 +374,8 @@ export function MomoChat({ children }: { children: ReactNode }) {
           (history.isLoading && draftMessages === null) || isSelecting,
         activeConversationId,
         sendMessage,
+        confirmLeaveDraft,
+        dismissLeaveDraft,
         startNewConversation,
         selectConversation,
       }}
@@ -487,7 +620,13 @@ function MomoChatThreadSkeleton() {
 }
 
 function MomoChatThread() {
-  const { messages, isLoadingHistory, isSending } = useMomoChat()
+  const {
+    messages,
+    isLoadingHistory,
+    isSending,
+    confirmLeaveDraft,
+    dismissLeaveDraft,
+  } = useMomoChat()
 
   if (isLoadingHistory) {
     return <MomoChatThreadSkeleton />
@@ -508,7 +647,17 @@ function MomoChatThread() {
                 isSending && !isUser && index === messages.length - 1
 
               return (
-                <MessageScrollerItem key={message.id} messageId={message.id}>
+                <MessageScrollerItem
+                  key={message.id}
+                  messageId={message.id}
+                  className={
+                    message.leaveDrafts?.some(
+                      (draft) => draft.status !== "dismissed"
+                    )
+                      ? "[content-visibility:visible]"
+                      : undefined
+                  }
+                >
                   <Message align={isUser ? "end" : "start"}>
                     <MessageContent>
                       <Bubble
@@ -531,6 +680,20 @@ function MomoChatThread() {
                           )}
                         </BubbleContent>
                       </Bubble>
+                      {message.leaveDrafts?.map((draft, index) =>
+                        draft.status === "dismissed" ? null : (
+                          <LeaveDraftCard
+                            key={`${message.id}-${index}-${draft.date}`}
+                            draft={draft}
+                            onConfirm={() => {
+                              void confirmLeaveDraft(message.id, index)
+                            }}
+                            onDismiss={() => {
+                              dismissLeaveDraft(message.id, index)
+                            }}
+                          />
+                        )
+                      )}
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
