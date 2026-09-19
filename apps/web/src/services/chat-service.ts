@@ -1,8 +1,17 @@
 import { apiFetch } from "@/lib/api"
 
+import type { LeaveCoverage, LeaveType } from "@/services/leave-service"
+
 export type ChatEvent =
   | { type: "conversation"; id: string }
   | { type: "text"; delta: string }
+  | {
+      type: "leave_draft"
+      date: string
+      leave_type: LeaveType
+      coverage: LeaveCoverage
+      reason: string
+    }
   | { type: "done" }
   | { type: "error"; detail: string }
 
@@ -72,10 +81,23 @@ export async function sendChatMessage(
   }
 }
 
+export type LeaveDraftStatus = "pending" | "filed" | "dismissed"
+
+export type LeaveDraft = {
+  date: string
+  leave_type: LeaveType
+  coverage: LeaveCoverage
+  reason: string
+  status: LeaveDraftStatus
+  error?: string
+  isFiling?: boolean
+}
+
 export type ChatMessage = {
   id: string
   role: "user" | "assistant"
   text: string
+  leaveDrafts?: LeaveDraft[]
 }
 
 export type ChatConversation = {
