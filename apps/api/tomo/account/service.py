@@ -11,6 +11,7 @@ from tomo.enums import ADMIN_ROLES, MANAGER_ROLES
 logger = logging.getLogger(__name__)
 
 _PROFILES = "profiles"
+_LEAVE_REQUESTS = "leave_requests"
 
 
 class AccountService:
@@ -204,6 +205,20 @@ class AccountService:
                 detail="Failed to reassign manager",
             )
 
+        try:
+            await (
+                service_client.from_(_LEAVE_REQUESTS)
+                .update({"manager_id": manager_id})
+                .eq("profile_id", profile_id)
+                .eq("status", "pending")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to update leave requests: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update leave requests",
+            )
         return response.data[0]
 
     async def _require_admin(self, auth_context: AuthContext) -> None:
