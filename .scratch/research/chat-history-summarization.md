@@ -2,7 +2,7 @@
 
 Primary-source numbers for when chat apps compact history (summary + recent tail) instead of sending the full thread to the model.
 
-Toki today stores the full thread in `chat_conversations.messages` and passes that entire list as `message_history` ([`apps/api/tomo/chat/service.py`](../../apps/api/tomo/chat/service.py)). There is no cap or summarizer yet.
+Momo today stores the full thread in `chat_conversations.messages` and passes that entire list as `message_history` ([`apps/api/tomo/chat/service.py`](../../apps/api/tomo/chat/service.py)). There is no cap or summarizer yet.
 
 ## Pattern (same one discussed 12 Sep)
 
@@ -13,7 +13,7 @@ Two different goals get mixed together in docs:
 1. **Don't overflow the context window** — compact at 70–90% of the model's window (tens or hundreds of thousands of tokens).
 2. **Don't pay to re-send old tool JSON every turn** — compact much earlier (a few thousand tokens, or a handful of user turns).
 
-Toki's model (`gpt-4o-mini`) has a 128k window. Overflow is not the current problem. Cost of replaying attendance tool payloads is.
+Momo's model (`gpt-4o-mini`) has a 128k window. Overflow is not the current problem. Cost of replaying attendance tool payloads is.
 
 ## Numbers other products actually ship
 
@@ -37,9 +37,9 @@ Toki's model (`gpt-4o-mini`) has a 128k window. Overflow is not the current prob
 
 Nobody publishes a universal “summary must be N tokens” cap. They cap **when** to fire and **how much recent raw history** to keep. The summary is “as long as the summarizer writes,” then it becomes the new prefix.
 
-## What this means for Toki
+## What this means for Momo
 
-- Do **not** copy Anthropic's 150k or Harness `max_fraction=0.9`. Those fire when the window is almost full. Toki would keep paying for every old `get_attendance` JSON dump until then.
+- Do **not** copy Anthropic's 150k or Harness `max_fraction=0.9`. Those fire when the window is almost full. Momo would keep paying for every old `get_attendance` JSON dump until then.
 - The chatbot-era numbers (LangChain **2k–4k** trigger, keep last **10–20** messages) match a timesheet chat better.
 - First cheap win on this stack is Harness `ClearToolResults` (blank old tool bodies, keep last 3 pairs) before an LLM summary. Attendance lists are the bulky part; user chat is small.
 - If summarizing: use a cheap model, keep last ~10–20 *complete* turns (not a naive `messages[-5:]` — that can orphan a tool return), write facts into the summary (dates asked, clock-in times, “last week” meaning), store the unsummarized thread in Postgres as today.

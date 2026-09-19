@@ -6,9 +6,9 @@ from tomo.chat.deps import ChatDeps
 from tomo.chat.prompts import INSTRUCTIONS
 from tomo.core.dates import app_dates
 
-toki = Agent(
+momo = Agent(
     "openai:gpt-4o-mini",
-    name="Toki",
+    name="Momo",
     deps_type=ChatDeps,
     instructions=lambda: app_dates().format(INSTRUCTIONS),
     capabilities=[SubAgents(agents=[SubAgent(timesheet_agent)])],

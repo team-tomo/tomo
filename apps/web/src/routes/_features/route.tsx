@@ -21,7 +21,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@workspace/ui/components/sidebar"
-import { TokiChat, TokiChatPanel, TokiChatTrigger } from "./-toki-chat"
+import { MomoChat, MomoChatPanel, MomoChatTrigger } from "./-momo-chat"
 import {
   Field,
   FieldDescription,
@@ -87,7 +87,7 @@ function FeatureLayout() {
   }
 
   return (
-    <TokiChat>
+    <MomoChat>
       <SidebarProvider defaultOpen={false}>
         <AppSidebar />
         <SidebarInset className="h-svh overflow-hidden">
@@ -201,17 +201,17 @@ function FeatureLayout() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <TokiChatTrigger />
+              <MomoChatTrigger />
             </div>
           </header>
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <Outlet />
             </div>
-            <TokiChatPanel />
+            <MomoChatPanel />
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </TokiChat>
+    </MomoChat>
   )
 }

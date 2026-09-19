@@ -59,3 +59,11 @@ _Avoid_: PTO, leave category, time-off type
 **Leave Request**:
 A Profile asking to be away on one date, with a Leave Type, marked as a whole Workday or a half-day, until it is decided. Three days away is three Leave Requests. Filing is blocked unless the Profile has an active Manager, and blocked if another pending or approved request already exists on that date (rejected and cancelled do not count). Status is pending until the Manager approves or rejects, or the filer cancels; no edits — cancel and file again. That Manager decides it while they are active. If they become inactive while a request is pending, any other Manager (Lead or Executive, not the filer) may decide it; the first decision wins. If Manage Accounts assigns a new Manager, pending requests move to that person. Leave does not affect timesheet clock-in in this pass. Half-day does not record morning vs afternoon; it is 0.5 Workday only.
 _Avoid_: PTO, time-off, leave (the request is the thing)
+
+**Momo**:
+The personal assistant the person talks to in chat. Delegates live attendance questions to Toki. Not the time keeper.
+_Avoid_: Toki (that is the time specialist), chatbot, copilot, Hari (retired)
+
+**Toki**:
+The time specialist behind Momo. Handles this Profile's attendance. The person does not talk to Toki directly.
+_Avoid_: Hari (retired), Momo (that is the assistant), timesheet agent (that is the module)

@@ -10,7 +10,7 @@ from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 from tomo.account.service import AccountService, account_service
 from tomo.chat.deps import ChatDeps
-from tomo.chat.orchestrator import toki
+from tomo.chat.orchestrator import momo
 from tomo.chat.schemas import (
     ChatRequestSchema,
     ConversationSchema,
@@ -114,7 +114,7 @@ class ChatService:
         yield _sse({"type": "conversation", "id": str(conversation_id)})
 
         try:
-            async with toki.run_stream(
+            async with momo.run_stream(
                 payload.message,
                 deps=deps,
                 message_history=history,

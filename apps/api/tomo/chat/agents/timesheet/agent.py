@@ -6,8 +6,8 @@ from tomo.core.dates import app_dates
 
 timesheet_agent = Agent(
     "openai:gpt-4.1-mini",
-    name="Hari",
-    description="Attendance for the signed-in user: today clock-in/out status and date-range history.",
+    name="Toki",
+    description="Toki, the time keeper: attendance for the signed-in user — today clock-in/out status and date-range history.",
     deps_type=ChatDeps,
     instructions=lambda: app_dates().format(INSTRUCTIONS),
     tools=[get_today_status, get_attendance],

@@ -77,7 +77,7 @@ const SUGGESTIONS = [
   "Can you get my attendance last week?",
 ] as const
 
-type TokiChatContextValue = {
+type MomoChatContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
   messages: ChatMessage[]
@@ -89,19 +89,19 @@ type TokiChatContextValue = {
   selectConversation: (conversationId: string) => Promise<void>
 }
 
-const TokiChatContext = createContext<TokiChatContextValue | null>(null)
+const MomoChatContext = createContext<MomoChatContextValue | null>(null)
 
-function useTokiChat() {
-  const context = useContext(TokiChatContext)
+function useMomoChat() {
+  const context = useContext(MomoChatContext)
 
   if (!context) {
-    throw new Error("Toki chat must be used within TokiChat.")
+    throw new Error("Momo chat must be used within MomoChat.")
   }
 
   return context
 }
 
-export function TokiChat({ children }: { children: ReactNode }) {
+export function MomoChat({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState<boolean>(false)
   const [draftMessages, setDraftMessages] = useState<ChatMessage[] | null>(null)
@@ -233,7 +233,7 @@ export function TokiChat({ children }: { children: ReactNode }) {
   )
 
   return (
-    <TokiChatContext.Provider
+    <MomoChatContext.Provider
       value={{
         open,
         setOpen,
@@ -248,21 +248,21 @@ export function TokiChat({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </TokiChatContext.Provider>
+    </MomoChatContext.Provider>
   )
 }
 
-export function TokiChatTrigger() {
-  const { open, setOpen } = useTokiChat()
+export function MomoChatTrigger() {
+  const { open, setOpen } = useMomoChat()
 
   return (
     <Button
       type="button"
       aria-expanded={open}
-      aria-controls="toki-chat-panel"
+      aria-controls="momo-chat-panel"
       onClick={() => setOpen(!open)}
     >
-      {open ? "Close conversation" : "Chat with Toki"}
+      {open ? "Close conversation" : "Chat with Momo"}
       <HugeiconsIcon
         icon={open ? Cancel01Icon : GoogleGeminiIcon}
         data-icon="inline-end"
@@ -271,16 +271,16 @@ export function TokiChatTrigger() {
   )
 }
 
-export function TokiChatPanel() {
+export function MomoChatPanel() {
   const { open, messages, isSending, isLoadingHistory, startNewConversation } =
-    useTokiChat()
+    useMomoChat()
   const canStartNew: boolean =
     messages.length > 0 && !isSending && !isLoadingHistory
 
   return (
     <aside
-      id="toki-chat-panel"
-      aria-label="Toki"
+      id="momo-chat-panel"
+      aria-label="Momo"
       aria-hidden={!open}
       inert={!open}
       className={cn(
@@ -298,11 +298,11 @@ export function TokiChatPanel() {
       >
         <div className="flex shrink-0 flex-col gap-3 p-4">
           <h2 className="font-heading text-sm font-medium text-foreground">
-            Toki - Your personal assistant
+            Momo - Your personal assistant
           </h2>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1">
-              <TokiChatHistoryMenu />
+              <MomoChatHistoryMenu />
               <Button
                 type="button"
                 variant="default"
@@ -321,14 +321,14 @@ export function TokiChatPanel() {
               className="border-border"
             >
               <HugeiconsIcon icon={BookOpenIcon} data-icon="inline-start" />
-              Toki Guide
+              Momo Guide
             </Button>
           </div>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
-          <TokiChatThread />
+          <MomoChatThread />
         </div>
-        <TokiChatComposer />
+        <MomoChatComposer />
       </div>
     </aside>
   )
@@ -349,14 +349,14 @@ function formatConversationTime(updatedAt: string): string {
   return `${Math.floor(hours / 24)}d`
 }
 
-function TokiChatHistoryMenu() {
+function MomoChatHistoryMenu() {
   const {
     open,
     isSending,
     isLoadingHistory,
     activeConversationId,
     selectConversation,
-  } = useTokiChat()
+  } = useMomoChat()
   const conversations = useConversations(open)
 
   return (
@@ -420,8 +420,8 @@ function TokiChatHistoryMenu() {
   )
 }
 
-function TokiChatEmpty() {
-  const { isSending, sendMessage } = useTokiChat()
+function MomoChatEmpty() {
+  const { isSending, sendMessage } = useMomoChat()
 
   return (
     <Empty className="min-h-0 flex-1 border-0">
@@ -437,7 +437,7 @@ function TokiChatEmpty() {
           />
         </EmptyMedia>
         <EmptyTitle className={cn(EMPTY_ENTER, "delay-100")}>
-          Ask Toki
+          Ask Momo
         </EmptyTitle>
         <EmptyDescription className={cn(EMPTY_ENTER, "delay-200")}>
           Ask me anything that you need help with.
@@ -469,7 +469,7 @@ function TokiChatEmpty() {
   )
 }
 
-function TokiChatThreadSkeleton() {
+function MomoChatThreadSkeleton() {
   return (
     <div
       role="status"
@@ -486,15 +486,15 @@ function TokiChatThreadSkeleton() {
   )
 }
 
-function TokiChatThread() {
-  const { messages, isLoadingHistory, isSending } = useTokiChat()
+function MomoChatThread() {
+  const { messages, isLoadingHistory, isSending } = useMomoChat()
 
   if (isLoadingHistory) {
-    return <TokiChatThreadSkeleton />
+    return <MomoChatThreadSkeleton />
   }
 
   if (messages.length === 0) {
-    return <TokiChatEmpty />
+    return <MomoChatEmpty />
   }
 
   return (
@@ -547,8 +547,8 @@ function TokiChatThread() {
   )
 }
 
-function TokiChatComposer() {
-  const { open, isSending, isLoadingHistory, sendMessage } = useTokiChat()
+function MomoChatComposer() {
+  const { open, isSending, isLoadingHistory, sendMessage } = useMomoChat()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -577,13 +577,13 @@ function TokiChatComposer() {
   return (
     <form className="shrink-0 p-4" onSubmit={onSubmit}>
       <Field>
-        <FieldLabel htmlFor="toki-message" className="sr-only">
-          Message Toki
+        <FieldLabel htmlFor="momo-message" className="sr-only">
+          Message Momo
         </FieldLabel>
         <InputGroup className="min-h-10 items-end">
           <InputGroupTextarea
             ref={textareaRef}
-            id="toki-message"
+            id="momo-message"
             name="message"
             placeholder="What can we help you with?"
             autoComplete="off"

@@ -1,7 +1,7 @@
 from datetime import date
 
-from tomo.chat.agents.timesheet.prompts import INSTRUCTIONS as HARI_INSTRUCTIONS
-from tomo.chat.prompts import INSTRUCTIONS as TOKI_INSTRUCTIONS
+from tomo.chat.agents.timesheet.prompts import INSTRUCTIONS as TOKI_INSTRUCTIONS
+from tomo.chat.prompts import INSTRUCTIONS as MOMO_INSTRUCTIONS
 from tomo.core.dates import app_dates
 
 
@@ -44,5 +44,5 @@ def test_format_fills_iso_placeholders() -> None:
 def test_agent_prompts_accept_app_dates() -> None:
     dates = app_dates(date(2026, 9, 15))
 
-    assert "2026-09-07" in dates.format(TOKI_INSTRUCTIONS)
-    assert "2026-09-13" in dates.format(HARI_INSTRUCTIONS)
+    assert "2026-09-07" in dates.format(MOMO_INSTRUCTIONS)
+    assert "2026-09-13" in dates.format(TOKI_INSTRUCTIONS)
