@@ -20,13 +20,12 @@
 # Agent:
   ☐ Create subagent for each feature @started(26-09-16 20:24)
 
-# Leave Request:
-  ☐ Setpup leave_requests table
-  ☐ Setup schema, routes, tests and service
-  ☐ Add agent tool for leave
-  ☐ Setup new endpoint for profiles - connected to leave
 
 Archive:
+  ✔ Setpup leave_requests table @done(26-09-20 00:42) @project(# Leave Request)
+  ✔ Setup schema, routes, tests and service @done(26-09-20 00:42) @project(# Leave Request)
+  ✔ Add agent tool for leave @done(26-09-20 00:42) @project(# Leave Request)
+  ✔ Setup new endpoint for profiles - connected to leave @done(26-09-20 00:42) @project(# Leave Request)
   ✔ Create main AI agent to delegate task @done(26-09-16 20:24) @project(# Agent)
   ✔ Chat UI @done(26-09-16 20:24) @project(# Agent)
   ✔ Get today's status of the user @done(26-09-05 20:56) @project(# Timesheet Service)
