@@ -22,6 +22,8 @@ INBOX_LEAVE = "/api/v1/leave/inbox"
 TODAY = datetime(2026, 9, 18, 10, 0, tzinfo=MANILA)
 STRANGER_ID = "22222222-3333-4444-8555-666666666666"
 OTHER_MANAGER_ID = "33333333-4444-4555-8666-777777777777"
+ADMIN_ID = "44444444-5555-4666-8777-888888888888"
+REASSIGN_MANAGER = f"/api/v1/account/profiles/{USER_ID}/manager"
 
 
 def _payload(
@@ -89,6 +91,7 @@ def profiles() -> ProfilesTable:
     table.seed(id=USER_ID, role="ic", is_active=True, manager_id=OTHER_USER_ID)
     table.seed(id=OTHER_MANAGER_ID, role="executive", is_active=True)
     table.seed(id=STRANGER_ID, role="ic", is_active=True)
+    table.seed(id=ADMIN_ID, role="support", is_active=True)
     return table
 
 
@@ -126,6 +129,18 @@ def stranger_api(profiles: ProfilesTable, leaves: LeaveRequestsTable):
     _override_leave_client(profiles, leaves, STRANGER_ID)
     with TestClient(app) as client:
         yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def as_profile(profiles: ProfilesTable, leaves: LeaveRequestsTable):
+    with TestClient(app) as client:
+
+        def _as(user_id: str) -> TestClient:
+            _override_leave_client(profiles, leaves, user_id)
+            return client
+
+        yield _as
     app.dependency_overrides.clear()
 
 
@@ -668,3 +683,95 @@ class TestDecideLeave:
             second.json()["detail"]
             == "Only a pending leave request can be decided"
         )
+
+
+class TestReassignMovesPendingLeave:
+    def test_pending_leave_follows_new_manager(self, as_profile, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        response = as_profile(ADMIN_ID).patch(
+            REASSIGN_MANAGER, json={"manager_id": OTHER_MANAGER_ID}
+        )
+
+        assert response.status_code == 200
+        assert response.json()["manager_id"] == OTHER_MANAGER_ID
+
+        inbox = as_profile(OTHER_MANAGER_ID).get(INBOX_LEAVE)
+        assert inbox.status_code == 200
+        assert [item["id"] for item in inbox.json()] == [row["id"]]
+        assert inbox.json()[0]["manager_id"] == OTHER_MANAGER_ID
+
+        old_inbox = as_profile(OTHER_USER_ID).get(INBOX_LEAVE)
+        assert old_inbox.status_code == 200
+        assert old_inbox.json() == []
+
+        viewed = as_profile(USER_ID).get(f"{FILE_LEAVE}/{row['id']}")
+        assert viewed.status_code == 200
+        assert viewed.json()["manager_id"] == OTHER_MANAGER_ID
+
+    def test_decided_leave_keeps_old_manager(self, as_profile, leaves) -> None:
+        approved = _seed_leave(leaves, date="2026-09-10", status="approved")
+        cancelled = _seed_leave(leaves, date="2026-09-11", status="cancelled")
+        rejected = _seed_leave(leaves, date="2026-09-12", status="rejected")
+
+        response = as_profile(ADMIN_ID).patch(
+            REASSIGN_MANAGER, json={"manager_id": OTHER_MANAGER_ID}
+        )
+
+        assert response.status_code == 200
+
+        filer = as_profile(USER_ID)
+        for row in (approved, cancelled, rejected):
+            viewed = filer.get(f"{FILE_LEAVE}/{row['id']}")
+            assert viewed.status_code == 200
+            assert viewed.json()["manager_id"] == OTHER_USER_ID
+
+        inbox = as_profile(OTHER_MANAGER_ID).get(INBOX_LEAVE)
+        assert inbox.json() == []
+
+    def test_does_not_move_another_profiles_pending(
+        self, as_profile, leaves
+    ) -> None:
+        theirs = _seed_leave(
+            leaves,
+            profile_id=STRANGER_ID,
+            date="2026-09-18",
+            manager_id=OTHER_USER_ID,
+        )
+
+        response = as_profile(ADMIN_ID).patch(
+            REASSIGN_MANAGER, json={"manager_id": OTHER_MANAGER_ID}
+        )
+
+        assert response.status_code == 200
+
+        viewed = as_profile(STRANGER_ID).get(f"{FILE_LEAVE}/{theirs['id']}")
+        assert viewed.status_code == 200
+        assert viewed.json()["manager_id"] == OTHER_USER_ID
+
+        inbox = as_profile(OTHER_USER_ID).get(INBOX_LEAVE)
+        assert [item["id"] for item in inbox.json()] == [theirs["id"]]
+
+    def test_reassign_with_no_pending_leave_succeeds(self, as_profile) -> None:
+        response = as_profile(ADMIN_ID).patch(
+            REASSIGN_MANAGER, json={"manager_id": OTHER_MANAGER_ID}
+        )
+
+        assert response.status_code == 200
+        assert response.json()["manager_id"] == OTHER_MANAGER_ID
+
+    def test_new_manager_can_approve_moved_pending(self, as_profile, leaves) -> None:
+        row = _seed_leave(leaves, date="2026-09-18")
+
+        as_profile(ADMIN_ID).patch(
+            REASSIGN_MANAGER, json={"manager_id": OTHER_MANAGER_ID}
+        )
+
+        response = as_profile(OTHER_MANAGER_ID).post(
+            f"{FILE_LEAVE}/{row['id']}/approve"
+        )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "approved"
+        assert response.json()["decided_by"] == OTHER_MANAGER_ID
+        assert response.json()["manager_id"] == OTHER_MANAGER_ID
