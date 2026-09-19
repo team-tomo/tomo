@@ -61,9 +61,13 @@ A Profile asking to be away on one date, with a Leave Type, marked as a whole Wo
 _Avoid_: PTO, time-off, leave (the request is the thing)
 
 **Momo**:
-The personal assistant the person talks to in chat. Delegates live attendance questions to Toki. Not the time keeper.
-_Avoid_: Toki (that is the time specialist), chatbot, copilot, Hari (retired)
+The personal assistant the person talks to in chat. Delegates live attendance to Toki and Leave Requests to Kyu. Not a specialist.
+_Avoid_: Toki (attendance), Kyu (leave), chatbot, copilot, Hari (retired)
 
 **Toki**:
 The time specialist behind Momo. Handles this Profile's attendance. The person does not talk to Toki directly.
-_Avoid_: Hari (retired), Momo (that is the assistant), timesheet agent (that is the module)
+_Avoid_: Hari (retired), Momo (that is the assistant), Kyu (that is leave), timesheet agent (that is the module)
+
+**Kyu**:
+The Leave Request specialist behind Momo. Lists this Profile's Leave Requests and prepares a draft to file; the person confirms in the UI. Does not approve or reject. The person does not talk to Kyu directly.
+_Avoid_: Momo (that is the assistant), Toki (that is attendance), leave agent (that is the module)
