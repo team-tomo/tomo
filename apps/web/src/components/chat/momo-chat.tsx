@@ -313,20 +313,25 @@ export function MomoChat({ children }: { children: ReactNode }) {
         return
       }
 
-      const payload = messagesRef.current
-        .find((message) => message.id === messageId)
-        ?.leaveDrafts?.[index]
+      const payload = messagesRef.current.find(
+        (message) => message.id === messageId
+      )?.leaveDrafts?.[index]
       if (!payload || payload.status !== "pending") {
         return
       }
 
       filingKeysRef.current.add(key)
       setDraftMessages((current) =>
-        patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
-          ...draft,
-          isFiling: true,
-          error: undefined,
-        }))
+        patchLeaveDraft(
+          current ?? messagesRef.current,
+          messageId,
+          index,
+          (draft) => ({
+            ...draft,
+            isFiling: true,
+            error: undefined,
+          })
+        )
       )
 
       try {
@@ -337,21 +342,31 @@ export function MomoChat({ children }: { children: ReactNode }) {
           reason: payload.reason,
         })
         setDraftMessages((current) =>
-          patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
-            ...draft,
-            status: "filed",
-            isFiling: false,
-            error: undefined,
-          }))
+          patchLeaveDraft(
+            current ?? messagesRef.current,
+            messageId,
+            index,
+            (draft) => ({
+              ...draft,
+              status: "filed",
+              isFiling: false,
+              error: undefined,
+            })
+          )
         )
       } catch (error) {
         const detail = filingErrorMessage(error)
         setDraftMessages((current) =>
-          patchLeaveDraft(current ?? messagesRef.current, messageId, index, (draft) => ({
-            ...draft,
-            isFiling: false,
-            error: error instanceof UnauthenticatedError ? undefined : detail,
-          }))
+          patchLeaveDraft(
+            current ?? messagesRef.current,
+            messageId,
+            index,
+            (draft) => ({
+              ...draft,
+              isFiling: false,
+              error: error instanceof UnauthenticatedError ? undefined : detail,
+            })
+          )
         )
         if (!(error instanceof UnauthenticatedError)) {
           toast.add({ description: detail, type: "error" })
