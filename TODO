@@ -20,8 +20,8 @@
 # Agent:
   ☐ Create subagent for each feature @started(26-09-16 20:24)
 
-
 Archive:
+  ✔ Display the agent event actions on the UI @done(26-09-21 18:46) @project(# Agent)
   ✔ Setpup leave_requests table @done(26-09-20 00:42) @project(# Leave Request)
   ✔ Setup schema, routes, tests and service @done(26-09-20 00:42) @project(# Leave Request)
   ✔ Add agent tool for leave @done(26-09-20 00:42) @project(# Leave Request)
