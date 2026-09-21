@@ -1,3 +1,4 @@
+from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
@@ -34,6 +35,10 @@ class AppDates:
     last_week_end: date
     next_week_start: date
     next_week_end: date
+    month_start: date
+    month_end: date
+    last_month_start: date
+    last_month_end: date
 
     @property
     def calendar(self) -> str:
@@ -57,6 +62,10 @@ class AppDates:
             last_week_end=self.last_week_end.isoformat(),
             next_week_start=self.next_week_start.isoformat(),
             next_week_end=self.next_week_end.isoformat(),
+            month_start=self.month_start.isoformat(),
+            month_end=self.month_end.isoformat(),
+            last_month_start=self.last_month_start.isoformat(),
+            last_month_end=self.last_month_end.isoformat(),
             calendar=self.calendar,
         )
 
@@ -69,6 +78,9 @@ def app_dates(today: date | None = None) -> AppDates:
     last_week_end = this_week_start - timedelta(days=1)
     next_week_start = this_week_start + timedelta(days=7)
     next_week_end = this_week_end + timedelta(days=7)
+    month_start = today.replace(day=1)
+    month_end = today.replace(day=monthrange(today.year, today.month)[1])
+    last_month_end = month_start - timedelta(days=1)
     return AppDates(
         today=today,
         weekday=_WEEKDAYS[today.weekday()],
@@ -81,4 +93,8 @@ def app_dates(today: date | None = None) -> AppDates:
         last_week_end=last_week_end,
         next_week_start=next_week_start,
         next_week_end=next_week_end,
+        month_start=month_start,
+        month_end=month_end,
+        last_month_start=last_month_end.replace(day=1),
+        last_month_end=last_month_end,
     )

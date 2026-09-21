@@ -34,6 +34,35 @@ def test_last_week_can_span_years() -> None:
     assert dates.last_week_end == date(2025, 12, 28)
 
 
+def test_this_and_last_month() -> None:
+    dates = app_dates(date(2026, 9, 21))
+
+    assert dates.month_start == date(2026, 9, 1)
+    assert dates.month_end == date(2026, 9, 30)
+    assert dates.last_month_start == date(2026, 8, 1)
+    assert dates.last_month_end == date(2026, 8, 31)
+
+
+def test_month_end_follows_the_month_length() -> None:
+    assert app_dates(date(2026, 2, 10)).month_end == date(2026, 2, 28)
+    assert app_dates(date(2024, 2, 10)).month_end == date(2024, 2, 29)
+    assert app_dates(date(2026, 1, 31)).month_end == date(2026, 1, 31)
+
+
+def test_last_month_can_span_years() -> None:
+    dates = app_dates(date(2026, 1, 15))
+
+    assert dates.month_start == date(2026, 1, 1)
+    assert dates.last_month_start == date(2025, 12, 1)
+    assert dates.last_month_end == date(2025, 12, 31)
+
+
+def test_a_month_fits_the_31_day_attendance_limit() -> None:
+    dates = app_dates(date(2026, 7, 15))
+
+    assert (dates.month_end - dates.month_start).days + 1 == 31
+
+
 def test_format_fills_iso_placeholders() -> None:
     filled = app_dates(date(2026, 9, 15)).format(
         "{today} {weekday} {today_year} {this_week_start} {last_week_start} {last_week_end} {next_week_start} {next_week_end}"
@@ -70,3 +99,15 @@ def test_agent_prompts_accept_app_dates() -> None:
     assert "2026-09-21" in toki
     assert "2026-09-21" in kyu
     assert "Wednesday 2026-09-23" in kyu
+
+
+def test_agent_prompts_spell_out_this_month() -> None:
+    dates = app_dates(date(2026, 9, 21))
+
+    for instructions in (MOMO_INSTRUCTIONS, TOKI_INSTRUCTIONS, KYU_INSTRUCTIONS):
+        filled = dates.format(instructions)
+
+        assert "2026-09-01" in filled
+        assert "2026-09-30" in filled
+        assert "2026-08-01" in filled
+        assert "2026-08-31" in filled
