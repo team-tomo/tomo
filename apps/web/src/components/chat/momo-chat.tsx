@@ -105,8 +105,8 @@ const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
 const EMPTY_ENTER =
   "animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-300 ease-out motion-reduce:animate-none"
 const SUGGESTIONS = [
-  "Can you draft my weekly actuals?",
-  "Can you get my attendance last week?",
+  "Draft my weekly actuals for this week",
+  "Get my attendance for the current month",
 ] as const
 
 type MomoChatContextValue = {
