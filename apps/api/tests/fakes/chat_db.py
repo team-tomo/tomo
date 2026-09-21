@@ -22,6 +22,22 @@ class ChatTable:
         self.rows.append(stored)
         return deepcopy(stored)
 
+    def upsert(self, row: dict) -> dict:
+        stored = {
+            "id": str(row["id"]),
+            "user_id": row["user_id"],
+            "messages": deepcopy(row["messages"]),
+            "created_at": _utc_now_iso(),
+            "updated_at": _utc_now_iso(),
+        }
+        for index, existing in enumerate(self.rows):
+            if existing["id"] == stored["id"]:
+                stored["created_at"] = existing["created_at"]
+                self.rows[index] = stored
+                return deepcopy(stored)
+        self.rows.append(stored)
+        return deepcopy(stored)
+
     def select(
         self,
         filters: list[tuple],
@@ -53,8 +69,13 @@ class FakeChatQuery:
         self._filters: list[tuple] = []
         self._order: tuple[str, bool] | None = None
         self._limit: int | None = None
+        self._upsert: dict | None = None
 
     def select(self, *_args) -> "FakeChatQuery":
+        return self
+
+    def upsert(self, row: dict) -> "FakeChatQuery":
+        self._upsert = row
         return self
 
     def eq(self, column: str, value) -> "FakeChatQuery":
@@ -74,6 +95,8 @@ class FakeChatQuery:
         return self
 
     async def execute(self) -> FakeResponse:
+        if self._upsert is not None:
+            return FakeResponse([self._table.upsert(self._upsert)])
         return FakeResponse(self._table.select(self._filters, self._order, self._limit))
 
 

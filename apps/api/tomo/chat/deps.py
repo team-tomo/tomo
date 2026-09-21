@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from tomo.account.service import AccountService
+from tomo.chat.stream import ChatStream
 from tomo.context import AuthContext
 from tomo.leave.service import LeaveService
 from tomo.timesheet.service import TimesheetService
@@ -18,3 +19,4 @@ class ChatDeps:
     account_service: AccountService
     leave_service: LeaveService
     leave_drafts: LeaveDrafts
+    stream: ChatStream

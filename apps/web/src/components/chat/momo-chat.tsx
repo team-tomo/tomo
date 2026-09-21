@@ -29,11 +29,13 @@ import {
   getConversation,
   sendChatMessage,
   type ChatMessage,
+  type ChatStatus,
   type LeaveDraft,
 } from "@/services/chat-service"
 import { fileLeave } from "@/services/leave-service"
 import { cn } from "@workspace/ui/lib/utils"
 import { Markdown } from "@/components/markdown"
+import { ChatStatusLine } from "@/components/chat/chat-status"
 import { LeaveDraftCard } from "@/components/chat/leave-draft-card"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -101,6 +103,7 @@ function filingErrorMessage(error: unknown): string {
   return "Failed to file leave"
 }
 
+const FIRST_STATUS: ChatStatus = { text: "Thinking", kind: "thinking" }
 const PANEL_TRANSITION = "duration-450 ease-[cubic-bezier(0.22,1,0.36,1)]"
 const EMPTY_ENTER =
   "animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-300 ease-out motion-reduce:animate-none"
@@ -113,6 +116,7 @@ type MomoChatContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
   messages: ChatMessage[]
+  status: ChatStatus | null
   isSending: boolean
   isLoadingHistory: boolean
   activeConversationId: string | null
@@ -144,6 +148,7 @@ export function MomoChat({ children }: { children: ReactNode }) {
   >(undefined)
   const [isSending, setIsSending] = useState<boolean>(false)
   const [isSelecting, setIsSelecting] = useState<boolean>(false)
+  const [status, setStatus] = useState<ChatStatus | null>(null)
   const isSendingRef = useRef<boolean>(false)
   const didToastHistoryErrorRef = useRef<boolean>(false)
   const messagesRef = useRef<ChatMessage[]>([])
@@ -229,11 +234,19 @@ export function MomoChat({ children }: { children: ReactNode }) {
         { id: assistantMessageId, role: "assistant", text: "" },
       ])
       setIsSending(true)
+      setStatus(FIRST_STATUS)
 
       try {
         await sendChatMessage(conversationId, text, (event) => {
           if (event.type === "conversation") {
             setSessionConversationId(event.id)
+          }
+          if (event.type === "status") {
+            setStatus(
+              event.text
+                ? { text: event.text, kind: event.kind ?? "agent" }
+                : null
+            )
           }
           if (event.type === "text") {
             setDraftMessages((current) =>
@@ -283,6 +296,7 @@ export function MomoChat({ children }: { children: ReactNode }) {
       } finally {
         isSendingRef.current = false
         setIsSending(false)
+        setStatus(null)
       }
     },
     [history.data, queryClient, sessionConversationId]
@@ -384,6 +398,7 @@ export function MomoChat({ children }: { children: ReactNode }) {
         open,
         setOpen,
         messages,
+        status,
         isSending,
         isLoadingHistory:
           (history.isLoading && draftMessages === null) || isSelecting,
@@ -637,6 +652,7 @@ function MomoChatThreadSkeleton() {
 function MomoChatThread() {
   const {
     messages,
+    status,
     isLoadingHistory,
     isSending,
     confirmLeaveDraft,
@@ -683,9 +699,11 @@ function MomoChatThread() {
                           className={isUser ? "whitespace-pre-wrap" : undefined}
                         >
                           {!message.text ? (
-                            <span className="shimmer text-xs text-muted-foreground">
-                              Loading…
-                            </span>
+                            <ChatStatusLine
+                              status={
+                                isStreaming && status ? status : FIRST_STATUS
+                              }
+                            />
                           ) : isUser ? (
                             message.text
                           ) : (

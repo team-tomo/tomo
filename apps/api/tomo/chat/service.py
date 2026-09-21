@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
@@ -6,7 +7,14 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
-from pydantic_ai.messages import ModelMessagesTypeAdapter
+from pydantic_ai import AgentRunResultEvent, AgentStreamEvent
+from pydantic_ai.messages import (
+    ModelMessagesTypeAdapter,
+    PartDeltaEvent,
+    PartStartEvent,
+    TextPart,
+    TextPartDelta,
+)
 
 from tomo.account.service import AccountService, account_service
 from tomo.chat.deps import ChatDeps, LeaveDrafts
@@ -16,6 +24,8 @@ from tomo.chat.schemas import (
     ConversationSchema,
     ConversationSummarySchema,
 )
+from tomo.chat.status import THINKING, status_for
+from tomo.chat.stream import ChatStream
 from tomo.chat.transcript import preview_title, to_transcript
 from tomo.context import AuthContext
 from tomo.core.config import APP_TIME_ZONE
@@ -35,6 +45,16 @@ def _today_start() -> datetime:
     return datetime.now(APP_TIME_ZONE).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
+
+
+def _text_delta(event: AgentStreamEvent) -> str | None:
+    """The reply text this event carries, if any."""
+
+    if isinstance(event, PartStartEvent) and isinstance(event.part, TextPart):
+        return event.part.content or None
+    if isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
+        return event.delta.content_delta or None
+    return None
 
 
 class ChatService:
@@ -99,6 +119,41 @@ class ChatService:
                 detail="Failed to save chat history",
             )
 
+    async def _run(
+        self,
+        payload: ChatRequestSchema,
+        deps: ChatDeps,
+        history,
+        conversation_id: UUID,
+    ) -> None:
+        """Run Momo, pushing its status and reply into deps.stream."""
+
+        try:
+            async with momo.run_stream_events(
+                payload.message,
+                deps=deps,
+                message_history=history,
+            ) as events:
+                async for event in events:
+                    if isinstance(event, AgentRunResultEvent):
+                        await self._save_history(
+                            conversation_id,
+                            deps.auth_context,
+                            event.result.all_messages(),
+                        )
+                        continue
+
+                    delta = _text_delta(event)
+                    if delta is not None:
+                        deps.stream.text(delta)
+                        continue
+
+                    label = status_for(event)
+                    if label is not None:
+                        deps.stream.status(label)
+        finally:
+            deps.stream.close()
+
     async def stream(
         self, payload: ChatRequestSchema, auth_context: AuthContext
     ) -> AsyncIterator[str]:
@@ -111,30 +166,29 @@ class ChatService:
             must_exist=payload.conversation_id is not None,
         )
 
+        stream = ChatStream()
         deps = ChatDeps(
             auth_context=auth_context,
             timesheet_service=self._timesheet_service,
             account_service=self._account_service,
             leave_service=self._leave_service,
             leave_drafts=LeaveDrafts(),
+            stream=stream,
         )
         yield _sse({"type": "conversation", "id": str(conversation_id)})
+        stream.status(THINKING)
 
+        run = asyncio.create_task(self._run(payload, deps, history, conversation_id))
         try:
-            async with momo.run_stream(
-                payload.message,
-                deps=deps,
-                message_history=history,
-            ) as result:
-                async for delta in result.stream_text(delta=True):
-                    yield _sse({"type": "text", "delta": delta})
-                await self._save_history(
-                    conversation_id, auth_context, result.all_messages()
-                )
+            async for event in stream.drain():
+                yield _sse(event)
+            await run
         except Exception:
             logger.exception("Failed to chat with the user.")
             yield _sse({"type": "error", "detail": "Failed to chat with the user."})
             return
+        finally:
+            run.cancel()
 
         for draft in deps.leave_drafts.items:
             yield _sse({"type": "leave_draft", **draft})

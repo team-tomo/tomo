@@ -2,9 +2,17 @@ import { apiFetch } from "@/lib/api"
 
 import type { LeaveCoverage, LeaveType } from "@/services/leave-service"
 
+export type ChatStatusKind = "thinking" | "tool" | "agent"
+
+export type ChatStatus = {
+  text: string
+  kind: ChatStatusKind
+}
+
 export type ChatEvent =
   | { type: "conversation"; id: string }
   | { type: "text"; delta: string }
+  | { type: "status"; text: string | null; kind?: ChatStatusKind }
   | {
       type: "leave_draft"
       date: string
