@@ -80,7 +80,9 @@ class AuthService:
                 "Failed to release invitation code %s after signup failure", row["id"]
             )
 
-    async def _delete_auth_user(self, user_id: str, service_client: AsyncClient) -> None:
+    async def _delete_auth_user(
+        self, user_id: str, service_client: AsyncClient
+    ) -> None:
         """Remove an auth user after a failed profile insert so the account is not left half-created."""
 
         try:
