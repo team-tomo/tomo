@@ -16,6 +16,7 @@ class ChatTable:
             "id": str(row.get("id") or uuid4()),
             "user_id": row["user_id"],
             "messages": deepcopy(row.get("messages") or []),
+            "leave_drafts": deepcopy(row.get("leave_drafts") or []),
             "created_at": row.get("created_at") or _utc_now_iso(),
             "updated_at": row.get("updated_at") or _utc_now_iso(),
         }
@@ -23,20 +24,38 @@ class ChatTable:
         return deepcopy(stored)
 
     def upsert(self, row: dict) -> dict:
+        existing = next(
+            (item for item in self.rows if item["id"] == str(row["id"])), None
+        )
+        if "leave_drafts" in row:
+            leave_drafts = deepcopy(row["leave_drafts"])
+        elif existing is not None:
+            leave_drafts = deepcopy(existing.get("leave_drafts") or [])
+        else:
+            leave_drafts = []
         stored = {
             "id": str(row["id"]),
             "user_id": row["user_id"],
             "messages": deepcopy(row["messages"]),
-            "created_at": _utc_now_iso(),
+            "leave_drafts": leave_drafts,
+            "created_at": existing["created_at"] if existing else _utc_now_iso(),
             "updated_at": _utc_now_iso(),
         }
-        for index, existing in enumerate(self.rows):
-            if existing["id"] == stored["id"]:
-                stored["created_at"] = existing["created_at"]
-                self.rows[index] = stored
-                return deepcopy(stored)
-        self.rows.append(stored)
+        if existing is None:
+            self.rows.append(stored)
+        else:
+            self.rows[self.rows.index(existing)] = stored
         return deepcopy(stored)
+
+    def update(self, filters: list[tuple], values: dict) -> list[dict]:
+        matched: list[dict] = []
+        for row in self.rows:
+            if not _matches(row, filters):
+                continue
+            row.update(deepcopy(values))
+            row["updated_at"] = _utc_now_iso()
+            matched.append(deepcopy(row))
+        return matched
 
     def select(
         self,
@@ -70,12 +89,17 @@ class FakeChatQuery:
         self._order: tuple[str, bool] | None = None
         self._limit: int | None = None
         self._upsert: dict | None = None
+        self._update: dict | None = None
 
     def select(self, *_args) -> "FakeChatQuery":
         return self
 
     def upsert(self, row: dict) -> "FakeChatQuery":
         self._upsert = row
+        return self
+
+    def update(self, values: dict) -> "FakeChatQuery":
+        self._update = values
         return self
 
     def eq(self, column: str, value) -> "FakeChatQuery":
@@ -97,6 +121,8 @@ class FakeChatQuery:
     async def execute(self) -> FakeResponse:
         if self._upsert is not None:
             return FakeResponse([self._table.upsert(self._upsert)])
+        if self._update is not None:
+            return FakeResponse(self._table.update(self._filters, self._update))
         return FakeResponse(self._table.select(self._filters, self._order, self._limit))
 
 

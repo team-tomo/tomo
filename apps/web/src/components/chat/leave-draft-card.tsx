@@ -64,18 +64,28 @@ export function LeaveDraftCard({
           <CardDescription>
             {draft.status === "filed"
               ? "Your leave has been filed."
-              : "Confirm to officially file your leave"}
+              : draft.status === "cancelled"
+                ? "Your leave draft was cancelled."
+                : "Confirm to officially file your leave"}
           </CardDescription>
           <CardAction>
             <Badge
-              variant="secondary"
+              variant={
+                draft.status === "cancelled" ? "destructive" : "secondary"
+              }
               className={
-                draft.status === "filed"
-                  ? undefined
-                  : "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-400"
+                draft.status === "pending"
+                  ? "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-400"
+                  : draft.status === "filed"
+                    ? "border-transparent bg-green-500/15 text-green-800 dark:text-green-400"
+                    : undefined
               }
             >
-              {draft.status === "filed" ? "Filed" : "Draft"}
+              {draft.status === "filed"
+                ? "Filed"
+                : draft.status === "cancelled"
+                  ? "Cancelled"
+                  : "Draft"}
             </Badge>
           </CardAction>
         </CardHeader>

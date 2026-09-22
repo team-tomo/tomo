@@ -15,6 +15,7 @@ export type ChatEvent =
   | { type: "status"; text: string | null; kind?: ChatStatusKind }
   | {
       type: "leave_draft"
+      id?: string
       date: string
       leave_type: LeaveType
       coverage: LeaveCoverage
@@ -89,9 +90,10 @@ export async function sendChatMessage(
   }
 }
 
-export type LeaveDraftStatus = "pending" | "filed" | "dismissed"
+export type LeaveDraftStatus = "pending" | "filed" | "cancelled"
 
 export type LeaveDraft = {
+  id?: string
   date: string
   leave_type: LeaveType
   coverage: LeaveCoverage
@@ -106,6 +108,54 @@ export type ChatMessage = {
   role: "user" | "assistant"
   text: string
   leaveDrafts?: LeaveDraft[]
+}
+
+type ChatMessageResponse = {
+  id: string
+  role: "user" | "assistant"
+  text: string
+  leave_drafts?: Array<{
+    id?: string | null
+    date: string
+    leave_type: LeaveType
+    coverage: LeaveCoverage
+    reason: string
+    status?: LeaveDraftStatus
+  }>
+}
+
+type ChatConversationResponse = {
+  id: string
+  messages: ChatMessageResponse[]
+  updated_at: string
+}
+
+/** Map one API message onto the chat bubble, including its leave cards. */
+function toChatMessage(message: ChatMessageResponse): ChatMessage {
+  const leaveDrafts = (message.leave_drafts ?? []).map((draft): LeaveDraft => ({
+    ...(draft.id ? { id: draft.id } : {}),
+    date: draft.date,
+    leave_type: draft.leave_type,
+    coverage: draft.coverage,
+    reason: draft.reason,
+    status: draft.status ?? "pending",
+  }))
+
+  return {
+    id: message.id,
+    role: message.role,
+    text: message.text,
+    ...(leaveDrafts.length > 0 ? { leaveDrafts } : {}),
+  }
+}
+
+/** Map a loaded conversation so its leave cards use the client's field names. */
+function toConversation(body: ChatConversationResponse): ChatConversation {
+  return {
+    id: body.id,
+    updated_at: body.updated_at,
+    messages: body.messages.map(toChatMessage),
+  }
 }
 
 export type ChatConversation = {
@@ -124,7 +174,8 @@ export async function getLatestConversation(): Promise<ChatConversation | null> 
     )
   }
 
-  return res.json()
+  const body = (await res.json()) as ChatConversationResponse | null
+  return body ? toConversation(body) : null
 }
 
 export type ChatConversationSummary = {
@@ -158,5 +209,24 @@ export async function getConversation(
     )
   }
 
-  return res.json()
+  return toConversation((await res.json()) as ChatConversationResponse)
+}
+
+/** Remember that this conversation's leave card was filed or cancelled. */
+export async function updateLeaveDraftStatus(
+  conversationId: string,
+  draftId: string,
+  status: "filed" | "cancelled"
+) {
+  const res = await apiFetch(`/chat/${conversationId}/leave-drafts`, {
+    method: "PATCH",
+    body: JSON.stringify({ id: draftId, status }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(
+      body?.detail ?? `Failed to update leave draft (${res.status})`
+    )
+  }
 }

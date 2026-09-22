@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
+from copy import deepcopy
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -23,6 +24,7 @@ from tomo.chat.schemas import (
     ChatRequestSchema,
     ConversationSchema,
     ConversationSummarySchema,
+    UpdateLeaveDraftSchema,
 )
 from tomo.chat.status import THINKING, status_for
 from tomo.chat.stream import ChatStream
@@ -99,15 +101,65 @@ class ChatService:
 
         return ModelMessagesTypeAdapter.validate_python(response.data[0]["messages"])
 
+    async def _stored_leave_drafts(
+        self, conversation_id: UUID, auth_context: AuthContext
+    ) -> list:
+        """Leave cards already saved on this conversation."""
+
+        try:
+            response = (
+                await auth_context.client.from_(_CHAT_CONVERSATIONS)
+                .select("leave_drafts")
+                .eq("id", str(conversation_id))
+                .eq("user_id", auth_context.current_user_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to load leave drafts: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to save chat history",
+            )
+
+        if not response.data:
+            return []
+
+        raw = response.data[0].get("leave_drafts") or []
+        return raw if isinstance(raw, list) else []
+
     async def _save_history(
-        self, conversation_id: UUID, auth_context: AuthContext, messages
+        self,
+        conversation_id: UUID,
+        auth_context: AuthContext,
+        messages,
+        new_drafts: list[dict],
     ):
-        """Save conversation history"""
+        """Save the thread and any new leave cards, keeping cards from earlier turns."""
+
+        anchors = await self._stored_leave_drafts(conversation_id, auth_context)
+        if new_drafts and messages:
+            index = len(messages) - 1
+            anchors = [
+                anchor
+                for anchor in anchors
+                if not isinstance(anchor, dict) or anchor.get("message_index") != index
+            ]
+            stamped: list[dict] = []
+            for offset, draft in enumerate(new_drafts):
+                item = deepcopy(draft)
+                item["id"] = f"{index}:{offset}"
+                item["status"] = "pending"
+                draft["id"] = item["id"]
+                draft["status"] = "pending"
+                stamped.append(item)
+            anchors.append({"message_index": index, "drafts": stamped})
 
         row = {
             "id": str(conversation_id),
             "user_id": auth_context.current_user_id,
             "messages": ModelMessagesTypeAdapter.dump_python(messages, mode="json"),
+            "leave_drafts": anchors,
         }
 
         try:
@@ -140,6 +192,7 @@ class ChatService:
                             conversation_id,
                             deps.auth_context,
                             event.result.all_messages(),
+                            deps.leave_drafts.items,
                         )
                         continue
 
@@ -203,7 +256,7 @@ class ChatService:
         try:
             response = (
                 await auth_context.client.from_(_CHAT_CONVERSATIONS)
-                .select("id, messages, updated_at")
+                .select("id, messages, leave_drafts, updated_at")
                 .eq("user_id", auth_context.current_user_id)
                 .gte("updated_at", _today_start().isoformat())
                 .order("updated_at", desc=True)
@@ -220,11 +273,7 @@ class ChatService:
         if not response.data:
             return None
 
-        row = response.data[0]
-        history = ModelMessagesTypeAdapter.validate_python(row["messages"])
-        return ConversationSchema(
-            id=row["id"], messages=to_transcript(history), updated_at=row["updated_at"]
-        )
+        return _conversation(response.data[0])
 
     async def list_conversations(
         self, auth_context: AuthContext
@@ -268,7 +317,7 @@ class ChatService:
         try:
             response = (
                 await auth_context.client.from_(_CHAT_CONVERSATIONS)
-                .select("id, messages, updated_at")
+                .select("id, messages, leave_drafts, updated_at")
                 .eq("id", str(conversation_id))
                 .eq("user_id", auth_context.current_user_id)
                 .limit(1)
@@ -287,11 +336,93 @@ class ChatService:
                 detail="Conversation not found",
             )
 
-        row = response.data[0]
-        history = ModelMessagesTypeAdapter.validate_python(row["messages"])
-        return ConversationSchema(
-            id=row["id"], messages=to_transcript(history), updated_at=row["updated_at"]
-        )
+        return _conversation(response.data[0])
+
+    async def set_leave_draft_status(
+        self,
+        conversation_id: UUID,
+        auth_context: AuthContext,
+        payload: UpdateLeaveDraftSchema,
+    ) -> None:
+        """Record that a leave draft in this conversation was filed or cancelled."""
+
+        try:
+            response = (
+                await auth_context.client.from_(_CHAT_CONVERSATIONS)
+                .select("leave_drafts")
+                .eq("id", str(conversation_id))
+                .eq("user_id", auth_context.current_user_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to load leave drafts: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update leave draft",
+            )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
+
+        anchors = response.data[0].get("leave_drafts") or []
+        if not isinstance(anchors, list) or not _mark_leave_draft(
+            anchors, payload.id, payload.status
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Leave draft not found",
+            )
+
+        try:
+            await (
+                auth_context.client.from_(_CHAT_CONVERSATIONS)
+                .update({"leave_drafts": anchors})
+                .eq("id", str(conversation_id))
+                .eq("user_id", auth_context.current_user_id)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to update leave draft: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update leave draft",
+            )
+
+
+def _mark_leave_draft(anchors: list, draft_id: str, status: str) -> bool:
+    """Set one saved leave card to filed or cancelled. False when that card is not there."""
+
+    for anchor in anchors:
+        if not isinstance(anchor, dict):
+            continue
+        drafts = anchor.get("drafts")
+        if not isinstance(drafts, list):
+            continue
+        for offset, draft in enumerate(drafts):
+            if not isinstance(draft, dict):
+                continue
+            stored_id = draft.get("id") or f"{anchor.get('message_index')}:{offset}"
+            if stored_id != draft_id:
+                continue
+            draft["id"] = stored_id
+            draft["status"] = status
+            return True
+    return False
+
+
+def _conversation(row: dict) -> ConversationSchema:
+    """A conversation response, with saved leave cards attached to their replies."""
+
+    history = ModelMessagesTypeAdapter.validate_python(row["messages"])
+    return ConversationSchema(
+        id=row["id"],
+        messages=to_transcript(history, row.get("leave_drafts")),
+        updated_at=row["updated_at"],
+    )
 
 
 chat_service = ChatService(timesheet_service, account_service, leave_service)

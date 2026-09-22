@@ -1,12 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 from fastapi.responses import StreamingResponse
 
 from tomo.chat.schemas import (
     ChatRequestSchema,
     ConversationSchema,
     ConversationSummarySchema,
+    UpdateLeaveDraftSchema,
 )
 from tomo.core.rate_limiter import limiter
 from tomo.dependencies import AuthContextDependency, ChatServiceDependency
@@ -60,3 +61,16 @@ async def get_conversation(
 ) -> ConversationSchema:
     """Get a conversation by its ID."""
     return await service.get_conversation(conversation_id, auth_context)
+
+
+@router.patch("/{conversation_id}/leave-drafts", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("20/minute")
+async def update_leave_draft(
+    request: Request,
+    conversation_id: UUID,
+    payload: UpdateLeaveDraftSchema,
+    auth_context: AuthContextDependency,
+    service: ChatServiceDependency,
+) -> None:
+    """Record that a leave draft was filed or cancelled."""
+    await service.set_leave_draft_status(conversation_id, auth_context, payload)

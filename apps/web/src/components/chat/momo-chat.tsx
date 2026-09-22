@@ -28,6 +28,7 @@ import { UnauthenticatedError } from "@/lib/api"
 import {
   getConversation,
   sendChatMessage,
+  updateLeaveDraftStatus,
   type ChatMessage,
   type ChatStatus,
   type LeaveDraft,
@@ -259,6 +260,7 @@ export function MomoChat({ children }: { children: ReactNode }) {
           }
           if (event.type === "leave_draft") {
             const draft: LeaveDraft = {
+              ...(event.id ? { id: event.id } : {}),
               date: event.date,
               leave_type: event.leave_type,
               coverage: event.coverage,
@@ -302,23 +304,54 @@ export function MomoChat({ children }: { children: ReactNode }) {
     [history.data, queryClient, sessionConversationId]
   )
 
-  const dismissLeaveDraft = useCallback((messageId: string, index: number) => {
-    setDraftMessages((current) =>
-      (current ?? []).map((message) => {
-        if (message.id !== messageId || !message.leaveDrafts) {
-          return message
+  const dismissLeaveDraft = useCallback(
+    async (messageId: string, index: number) => {
+      const draft = messagesRef.current.find(
+        (message) => message.id === messageId
+      )?.leaveDrafts?.[index]
+      if (!draft || draft.status !== "pending") {
+        return
+      }
+
+      if (draft.id && activeConversationId) {
+        try {
+          await updateLeaveDraftStatus(
+            activeConversationId,
+            draft.id,
+            "cancelled"
+          )
+        } catch (error) {
+          if (!(error instanceof UnauthenticatedError)) {
+            toast.add({
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to cancel leave draft",
+              type: "error",
+            })
+          }
+          return
         }
-        return {
-          ...message,
-          leaveDrafts: message.leaveDrafts.map((draft, draftIndex) =>
-            draftIndex === index
-              ? { ...draft, status: "dismissed", error: undefined }
-              : draft
-          ),
-        }
-      })
-    )
-  }, [])
+      }
+
+      setDraftMessages((current) =>
+        (current ?? messagesRef.current).map((message) => {
+          if (message.id !== messageId || !message.leaveDrafts) {
+            return message
+          }
+          return {
+            ...message,
+            leaveDrafts: message.leaveDrafts.map((item, draftIndex) =>
+              draftIndex === index
+                ? { ...item, status: "cancelled", error: undefined }
+                : item
+            ),
+          }
+        })
+      )
+    },
+    [activeConversationId]
+  )
 
   const confirmLeaveDraft = useCallback(
     async (messageId: string, index: number) => {
@@ -355,6 +388,25 @@ export function MomoChat({ children }: { children: ReactNode }) {
           coverage: payload.coverage,
           reason: payload.reason,
         })
+        if (payload.id && activeConversationId) {
+          try {
+            await updateLeaveDraftStatus(
+              activeConversationId,
+              payload.id,
+              "filed"
+            )
+          } catch (error) {
+            if (!(error instanceof UnauthenticatedError)) {
+              toast.add({
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Leave was filed, but the conversation could not be updated.",
+                type: "error",
+              })
+            }
+          }
+        }
         setDraftMessages((current) =>
           patchLeaveDraft(
             current ?? messagesRef.current,
@@ -389,7 +441,7 @@ export function MomoChat({ children }: { children: ReactNode }) {
         filingKeysRef.current.delete(key)
       }
     },
-    []
+    [activeConversationId]
   )
 
   return (
@@ -676,57 +728,58 @@ function MomoChatThread() {
               const isUser = message.role === "user"
               const isStreaming =
                 isSending && !isUser && index === messages.length - 1
+              const showBubble = message.text.length > 0 || isStreaming
 
               return (
                 <MessageScrollerItem
                   key={message.id}
                   messageId={message.id}
                   className={
-                    message.leaveDrafts?.some(
-                      (draft) => draft.status !== "dismissed"
-                    )
+                    message.leaveDrafts?.length
                       ? "[content-visibility:visible]"
                       : undefined
                   }
                 >
                   <Message align={isUser ? "end" : "start"}>
                     <MessageContent>
-                      <Bubble
-                        variant={isUser ? "default" : "muted"}
-                        align={isUser ? "end" : "start"}
-                      >
-                        <BubbleContent
-                          className={isUser ? "whitespace-pre-wrap" : undefined}
+                      {showBubble ? (
+                        <Bubble
+                          variant={isUser ? "default" : "muted"}
+                          align={isUser ? "end" : "start"}
                         >
-                          {!message.text ? (
-                            <ChatStatusLine
-                              status={
-                                isStreaming && status ? status : FIRST_STATUS
-                              }
-                            />
-                          ) : isUser ? (
-                            message.text
-                          ) : (
-                            <Markdown isAnimating={isStreaming}>
-                              {message.text}
-                            </Markdown>
-                          )}
-                        </BubbleContent>
-                      </Bubble>
-                      {message.leaveDrafts?.map((draft, index) =>
-                        draft.status === "dismissed" ? null : (
-                          <LeaveDraftCard
-                            key={`${message.id}-${index}-${draft.date}`}
-                            draft={draft}
-                            onConfirm={() => {
-                              void confirmLeaveDraft(message.id, index)
-                            }}
-                            onDismiss={() => {
-                              dismissLeaveDraft(message.id, index)
-                            }}
-                          />
-                        )
-                      )}
+                          <BubbleContent
+                            className={
+                              isUser ? "whitespace-pre-wrap" : undefined
+                            }
+                          >
+                            {!message.text ? (
+                              <ChatStatusLine
+                                status={
+                                  isStreaming && status ? status : FIRST_STATUS
+                                }
+                              />
+                            ) : isUser ? (
+                              message.text
+                            ) : (
+                              <Markdown isAnimating={isStreaming}>
+                                {message.text}
+                              </Markdown>
+                            )}
+                          </BubbleContent>
+                        </Bubble>
+                      ) : null}
+                      {message.leaveDrafts?.map((draft, index) => (
+                        <LeaveDraftCard
+                          key={`${message.id}-${draft.id ?? index}-${draft.date}`}
+                          draft={draft}
+                          onConfirm={() => {
+                            void confirmLeaveDraft(message.id, index)
+                          }}
+                          onDismiss={() => {
+                            void dismissLeaveDraft(message.id, index)
+                          }}
+                        />
+                      ))}
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
