@@ -1,6 +1,10 @@
 import { toast } from "@workspace/ui/components/toast"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { getAccountProfile, updateProfile } from "@/services/account-service"
+import {
+  createInvitation,
+  getAccountProfile,
+  updateProfile,
+} from "@/services/account-service"
 
 export const accountKeys = {
   all: ["account"] as const,
@@ -30,6 +34,24 @@ export function useUpdateProfile() {
     onError: (error: Error) => {
       toast.add({
         description: error.message ?? "Failed to update profile",
+        type: "error",
+      })
+    },
+  })
+}
+
+export function useCreateInvitation() {
+  return useMutation({
+    mutationFn: createInvitation,
+    onSuccess: () => {
+      toast.add({
+        description: "Invitation code created",
+        type: "success",
+      })
+    },
+    onError: (error: Error) => {
+      toast.add({
+        description: error.message ?? "Failed to create invitation code",
         type: "error",
       })
     },

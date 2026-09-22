@@ -12,5 +12,5 @@ class CreateAccountSchema(CreateDevAccountSchema):
 
 
 class CreateInviteCodeSchema(BaseModel):
-    invite_code: str
+    code: str
     role: str

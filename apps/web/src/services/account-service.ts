@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api"
+import type { CreateInvitationInput } from "@/schemas/manage-account-schema"
 import type { AccountSettingsInput } from "@/schemas/settings-schema"
 
 function toAccountSettings(
@@ -28,6 +29,25 @@ export async function getAccountProfile(): Promise<AccountSettingsInput> {
   }
 
   return toAccountSettings(await res.json())
+}
+
+export async function createInvitation(payload: CreateInvitationInput) {
+  const res = await apiFetch("/auth/create-invitation", {
+    method: "POST",
+    body: JSON.stringify({
+      code: payload.code,
+      role: payload.role,
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(
+      body?.detail ?? `Failed to create invitation code (${res.status})`
+    )
+  }
+
+  return res.json()
 }
 
 export async function updateProfile(
