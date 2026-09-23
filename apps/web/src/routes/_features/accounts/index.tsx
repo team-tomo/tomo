@@ -197,6 +197,7 @@ function CreateInviteCodeDialog({
                       id="invite-code"
                       autoComplete="off"
                       aria-invalid={fieldState.invalid}
+                      autoFocus
                     />
                     <InputGroupAddon align="inline-end">
                       <InputGroupButton
