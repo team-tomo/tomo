@@ -40,7 +40,7 @@ class AuthService:
 
         update_response = (
             await service_client.from_(_INVITATION_CODES)
-            .update({"status": "claimed"})
+            .update({"status": "used"})
             .eq("code", code)
             .select("*")
             .execute()
@@ -237,32 +237,42 @@ class AuthService:
                 detail="Failed to create account with this email",
             )
 
-        await self._record_invitation_code_claim(
-            claimed_code["id"], user.id, service_client
-        )
-
-        profile = await (
-            supabase.from_(_PROFILES)
-            .insert(
-                {
-                    "id": user.id,
-                    "email": payload.email,
-                    "full_name": payload.full_name.strip(),
-                    "role": claimed_code["role"],
-                    "username": payload.username.strip(),
-                    "is_active": True,
-                    "onboarding_status": "pending",
-                }
+        try:
+            profile = await (
+                service_client.from_(_PROFILES)
+                .insert(
+                    {
+                        "id": user.id,
+                        "email": payload.email,
+                        "full_name": payload.full_name.strip(),
+                        "role": claimed_code["role"],
+                        "is_active": True,
+                        "onboarding_status": "pending",
+                    }
+                )
+                .execute()
             )
-            .execute()
-        )
-
-        if not profile.data:
-            logger.critical("Failed to create profile for user %s", user.id)
+        except APIError as exc:
+            logger.error("Failed to create profile for user %s: %s", user.id, exc)
+            await self._release_invitation_code(claimed_code, service_client)
+            await self._delete_auth_user(user.id, service_client)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Failed to create profile for user",
             )
+
+        if not profile.data:
+            logger.critical("Failed to create profile for user %s", user.id)
+            await self._release_invitation_code(claimed_code, service_client)
+            await self._delete_auth_user(user.id, service_client)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create profile for user",
+            )
+
+        await self._record_invitation_code_claim(
+            claimed_code["id"], user.id, service_client
+        )
 
         return response
 
