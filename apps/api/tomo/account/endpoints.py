@@ -55,7 +55,7 @@ async def list_managers(
     auth_context: AuthContextDependency,
     service: AccountServiceDependency,
 ):
-    """List active Leads and Executives the current Profile may pick."""
+    """List every active Lead and Executive, including the caller."""
     return await service.list_managers(auth_context)
 
 

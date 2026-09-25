@@ -86,7 +86,7 @@ class AccountService:
         return response.data[0]
 
     async def list_managers(self, auth_context: AuthContext) -> list[ManagerSchema]:
-        """Return active Leads and Executives the current Profile may pick."""
+        """Return every active Lead and Executive, including the caller."""
 
         try:
             response = (
@@ -94,7 +94,6 @@ class AccountService:
                 .select("id, full_name, username, role, job_title")
                 .eq("is_active", True)
                 .in_("role", list(MANAGER_ROLES))
-                .neq("id", auth_context.current_user_id)
                 .order("full_name")
                 .execute()
             )
@@ -193,7 +192,7 @@ class AccountService:
         if profile_id == manager_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You cannot assign yourself as manager",
+                detail="A profile cannot be their own lead",
             )
 
         target = await self._get_profile_row(profile_id, service_client)
