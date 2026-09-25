@@ -4,7 +4,11 @@ from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
 
 from supabase import AsyncClient
-from tomo.account.schemas import ManagerSchema, UpdateProfileSchema
+from tomo.account.schemas import (
+    ManagerSchema,
+    ProfileListItemSchema,
+    UpdateProfileSchema,
+)
 from tomo.context import AuthContext
 from tomo.enums import ADMIN_ROLES, MANAGER_ROLES
 
@@ -102,6 +106,31 @@ class AccountService:
             )
 
         return [ManagerSchema(**row) for row in response.data]
+
+    async def list_profiles(
+        self, auth_context: AuthContext, service_client: AsyncClient
+    ) -> list[ProfileListItemSchema]:
+        """Admin-only: return every Profile for Manage Accounts."""
+
+        await self._require_admin(auth_context)
+
+        try:
+            response = (
+                await service_client.from_(_PROFILES)
+                .select(
+                    "id, full_name, username, email, avatar_url, role, is_active, manager_id, created_at"
+                )
+                .order("full_name")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to list profiles: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to list profiles",
+            )
+
+        return [ProfileListItemSchema(**row) for row in response.data]
 
     async def _assign_manager(self, manager_id: str, auth_context: AuthContext) -> None:
         """Set Manager only while it is still empty."""

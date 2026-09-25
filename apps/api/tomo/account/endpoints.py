@@ -36,6 +36,18 @@ async def update_profile(
     return await service.update_profile(payload, auth_context)
 
 
+@router.get("/profiles")
+@limiter.limit("20/minute")
+async def list_profiles(
+    request: Request,
+    auth_context: AuthContextDependency,
+    service_client: ServiceClientDependency,
+    service: AccountServiceDependency,
+):
+    """List every Profile for Manage Accounts. Dev, Executive, and Support only."""
+    return await service.list_profiles(auth_context, service_client)
+
+
 @router.get("/managers")
 @limiter.limit("20/minute")
 async def list_managers(
