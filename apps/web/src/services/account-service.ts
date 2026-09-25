@@ -1,6 +1,21 @@
 import { apiFetch } from "@/lib/api"
-import type { CreateInvitationInput } from "@/schemas/manage-account-schema"
+import type {
+  CreateInvitationInput,
+  UserRole,
+} from "@/schemas/manage-account-schema"
 import type { AccountSettingsInput } from "@/schemas/settings-schema"
+
+export type ProfileListItem = {
+  id: string
+  full_name: string
+  username: string | null
+  email: string
+  avatar_url: string | null
+  role: UserRole
+  is_active: boolean
+  manager_id: string | null
+  created_at: string
+}
 
 function toAccountSettings(
   row: {
@@ -29,6 +44,17 @@ export async function getAccountProfile(): Promise<AccountSettingsInput> {
   }
 
   return toAccountSettings(await res.json())
+}
+
+export async function listProfiles(): Promise<ProfileListItem[]> {
+  const res = await apiFetch("/account/profiles")
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.detail ?? `Failed to list profiles (${res.status})`)
+  }
+
+  return res.json()
 }
 
 export async function createInvitation(payload: CreateInvitationInput) {

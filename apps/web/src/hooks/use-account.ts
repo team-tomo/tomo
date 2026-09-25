@@ -3,18 +3,27 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   createInvitation,
   getAccountProfile,
+  listProfiles,
   updateProfile,
 } from "@/services/account-service"
 
 export const accountKeys = {
   all: ["account"] as const,
   profile: () => [...accountKeys.all, "profile"] as const,
+  profiles: () => [...accountKeys.all, "profiles"] as const,
 }
 
 export function useAccountProfile() {
   return useQuery({
     queryKey: accountKeys.profile(),
     queryFn: getAccountProfile,
+  })
+}
+
+export function useProfiles() {
+  return useQuery({
+    queryKey: accountKeys.profiles(),
+    queryFn: listProfiles,
   })
 }
 
