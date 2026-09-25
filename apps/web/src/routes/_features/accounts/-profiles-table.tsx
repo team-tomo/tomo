@@ -1,38 +1,39 @@
+import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AtIcon,
   Calendar03Icon,
+  Call02Icon,
   CheckmarkCircle02Icon,
   Mail01Icon,
-  MoreHorizontalIcon,
   Shield01Icon,
   UserIcon,
   UserMultiple02Icon,
+  WorkIcon,
 } from "@hugeicons/core-free-icons"
 import { useProfiles } from "@/hooks/use-account"
 import type { ProfileListItem } from "@/services/account-service"
 import type { UserRole } from "@/schemas/manage-account-schema"
 import { getInitials } from "@workspace/ui/lib/utils"
 import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@workspace/ui/components/drawer"
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
 } from "@workspace/ui/components/empty"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
@@ -70,8 +71,7 @@ const COLUMNS = [
   { label: "Role", icon: Shield01Icon },
   { label: "Lead", icon: UserMultiple02Icon },
   { label: "Join date", icon: Calendar03Icon },
-  { label: "Active", icon: CheckmarkCircle02Icon },
-  { label: "Action", icon: MoreHorizontalIcon },
+  { label: "Status", icon: CheckmarkCircle02Icon },
 ] as const
 
 const joinDate = new Intl.DateTimeFormat("en-US", {
@@ -82,6 +82,7 @@ const joinDate = new Intl.DateTimeFormat("en-US", {
 
 export function ProfilesTable() {
   const { data: profiles, isPending, isError } = useProfiles()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   if (isPending) {
     return <ProfilesTableSkeleton />
@@ -114,24 +115,43 @@ export function ProfilesTable() {
   const names = new Map(
     profiles.map((profile) => [profile.id, profile.full_name])
   )
+  const selected = profiles.find((profile) => profile.id === selectedId) ?? null
+  const selectedLead = selected?.manager_id
+    ? (names.get(selected.manager_id) ?? "—")
+    : "—"
 
   return (
-    <Table className={tableInset}>
-      <TableHeader>
-        <ProfileTableHeads />
-      </TableHeader>
-      <TableBody>
-        {profiles.map((profile) => (
-          <ProfileRow
-            key={profile.id}
-            profile={profile}
-            lead={
-              profile.manager_id ? (names.get(profile.manager_id) ?? "—") : "—"
-            }
-          />
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <Table className={tableInset}>
+        <TableHeader>
+          <ProfileTableHeads />
+        </TableHeader>
+        <TableBody>
+          {profiles.map((profile) => (
+            <ProfileRow
+              key={profile.id}
+              profile={profile}
+              lead={
+                profile.manager_id
+                  ? (names.get(profile.manager_id) ?? "—")
+                  : "—"
+              }
+              selected={profile.id === selectedId}
+              onSelect={() => setSelectedId(profile.id)}
+            />
+          ))}
+        </TableBody>
+      </Table>
+      <ProfileDrawer
+        profile={selected}
+        lead={selectedLead}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedId(null)
+          }
+        }}
+      />
+    </>
   )
 }
 
@@ -157,12 +177,29 @@ function ProfileTableHeads() {
 function ProfileRow({
   profile,
   lead,
+  selected,
+  onSelect,
 }: {
   profile: ProfileListItem
   lead: string
+  selected: boolean
+  onSelect: () => void
 }) {
   return (
-    <TableRow>
+    <TableRow
+      tabIndex={0}
+      role="button"
+      data-state={selected ? "selected" : undefined}
+      aria-label={`View ${profile.full_name}`}
+      className="cursor-pointer"
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
+    >
       <TableCell>
         <div className="flex items-center gap-2">
           <Avatar size="sm">
@@ -196,34 +233,108 @@ function ProfileRow({
           {profile.is_active ? "Active" : "Inactive"}
         </Badge>
       </TableCell>
-      <TableCell>
-        <ProfileActions name={profile.full_name} />
-      </TableCell>
     </TableRow>
   )
 }
 
-function ProfileActions({ name }: { name: string }) {
+function ProfileDrawer({
+  profile,
+  lead,
+  onOpenChange,
+}: {
+  profile: ProfileListItem | null
+  lead: string
+  onOpenChange: (open: boolean) => void
+}) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Actions for ${name}`}
-          />
-        }
-      >
-        <HugeiconsIcon icon={MoreHorizontalIcon} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Change lead</DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Drawer
+      open={profile != null}
+      onOpenChange={onOpenChange}
+      swipeDirection="right"
+    >
+      <DrawerContent>
+        {profile ? (
+          <>
+            <DrawerHeader className="flex-row items-center gap-3">
+              <Avatar>
+                <AvatarImage
+                  src={profile.avatar_url ?? ""}
+                  alt={profile.full_name}
+                />
+                <AvatarFallback>
+                  {getInitials(profile.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-col gap-1">
+                <DrawerTitle className="truncate">
+                  {profile.full_name}
+                </DrawerTitle>
+                <DrawerDescription className="truncate">
+                  {profile.email}
+                </DrawerDescription>
+              </div>
+            </DrawerHeader>
+            <div className="flex flex-col gap-4 overflow-y-auto p-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className={ROLE_BADGE[profile.role]}>
+                  {ROLE_LABEL[profile.role]}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={
+                    profile.is_active
+                      ? "border-current bg-green-500/15 text-green-700 dark:text-green-300"
+                      : "border-current bg-destructive/10 text-destructive"
+                  }
+                >
+                  {profile.is_active ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+              <dl className="flex flex-col gap-3">
+                <ProfileDetail icon={AtIcon} label="Username">
+                  {profile.username || "—"}
+                </ProfileDetail>
+                <ProfileDetail icon={WorkIcon} label="Job title">
+                  {profile.job_title || "—"}
+                </ProfileDetail>
+                <ProfileDetail icon={Call02Icon} label="Phone">
+                  {profile.phone || "—"}
+                </ProfileDetail>
+                <ProfileDetail icon={UserMultiple02Icon} label="Lead">
+                  {lead}
+                </ProfileDetail>
+                <ProfileDetail icon={Calendar03Icon} label="Join date">
+                  {joinDate.format(new Date(profile.created_at))}
+                </ProfileDetail>
+                <ProfileDetail icon={UserIcon} label="Bio">
+                  {profile.bio || "—"}
+                </ProfileDetail>
+              </dl>
+            </div>
+          </>
+        ) : null}
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+function ProfileDetail({
+  icon,
+  label,
+  children,
+}: {
+  icon: typeof UserIcon
+  label: string
+  children: string
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <dt className="inline-flex items-center gap-1.5 text-muted-foreground">
+        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
+        {label}
+      </dt>
+      <dd className="text-foreground">{children}</dd>
+    </div>
   )
 }
 
@@ -259,9 +370,6 @@ function ProfilesTableSkeleton() {
             </TableCell>
             <TableCell>
               <Skeleton className="h-5 w-14 rounded-full" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="size-6 rounded-md" />
             </TableCell>
           </TableRow>
         ))}
