@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AtIcon,
@@ -75,13 +75,23 @@ export function ProfileDrawer({
   const { data: currentUser } = useCurrentUser()
   const reassign = useReassignManager()
   const [editing, setEditing] = useState<boolean>(false)
-  const [leadId, setLeadId] = useState<string | null>(null)
+  const [leadId, setLeadId] = useState<string | null>(
+    profile?.manager_id ?? null
+  )
+  const [leadSource, setLeadSource] = useState({
+    id: profile?.id,
+    managerId: profile?.manager_id,
+  })
   const managers = useManagers(editing)
 
-  useEffect(() => {
+  if (
+    profile?.id !== leadSource.id ||
+    profile?.manager_id !== leadSource.managerId
+  ) {
+    setLeadSource({ id: profile?.id, managerId: profile?.manager_id })
     setEditing(false)
     setLeadId(profile?.manager_id ?? null)
-  }, [profile?.id, profile?.manager_id])
+  }
 
   const names = new Map(profiles.map((item) => [item.id, item.full_name]))
   const leadName = profile?.manager_id
