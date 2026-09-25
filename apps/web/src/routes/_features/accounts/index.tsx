@@ -18,6 +18,8 @@ import {
   type CreateInvitationInput,
   type UserRole,
 } from "@/schemas/manage-account-schema"
+import { ProfilesTable } from "./-profiles-table"
+import { toast } from "@workspace/ui/components/toast"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -49,7 +51,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { toast } from "@workspace/ui/components/toast"
 
 const ROLE_LABEL: Record<UserRole, string> = {
   dev: "Dev",
@@ -104,11 +105,11 @@ function AccountsPage() {
             <HugeiconsIcon icon={Ticket03Icon} className="size-4" />
             Create Invite Code
           </Button>
-          <Button type="button" variant="outline">
+          <Button type="button" variant="outline" disabled>
             <HugeiconsIcon icon={Csv01Icon} className="size-4 text-green-600" />
             Download CSV
           </Button>
-          <Button type="button" variant="outline">
+          <Button type="button" variant="outline" disabled>
             <HugeiconsIcon
               icon={Pdf01Icon}
               className="size-4 text-destructive"
@@ -121,7 +122,9 @@ function AccountsPage() {
           Account Management Guide
         </Button>
       </div>
-      <div className="min-h-0 min-w-0 flex-1 overflow-auto" />
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+        <ProfilesTable />
+      </div>
       <CreateInviteCodeDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </div>
   )
