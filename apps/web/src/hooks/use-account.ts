@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   createInvitation,
   getAccountProfile,
+  listManagers,
   listProfiles,
+  reassignManager,
   updateProfile,
 } from "@/services/account-service"
 
@@ -11,6 +13,7 @@ export const accountKeys = {
   all: ["account"] as const,
   profile: () => [...accountKeys.all, "profile"] as const,
   profiles: () => [...accountKeys.all, "profiles"] as const,
+  managers: () => [...accountKeys.all, "managers"] as const,
 }
 
 export function useAccountProfile() {
@@ -24,6 +27,41 @@ export function useProfiles() {
   return useQuery({
     queryKey: accountKeys.profiles(),
     queryFn: listProfiles,
+  })
+}
+
+export function useManagers(enabled: boolean) {
+  return useQuery({
+    queryKey: accountKeys.managers(),
+    queryFn: listManagers,
+    enabled,
+  })
+}
+
+export function useReassignManager() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      profileId,
+      managerId,
+    }: {
+      profileId: string
+      managerId: string
+    }) => reassignManager(profileId, managerId),
+    onSuccess: () => {
+      toast.add({
+        description: "Lead updated",
+        type: "success",
+      })
+      queryClient.invalidateQueries({ queryKey: accountKeys.profiles() })
+    },
+    onError: (error: Error) => {
+      toast.add({
+        description: error.message ?? "Failed to assign lead",
+        type: "error",
+      })
+    },
   })
 }
 
