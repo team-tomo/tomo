@@ -72,7 +72,20 @@ const joinDate = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 })
 
-export function ProfilesTable() {
+export type ProfileSort = "name" | "role" | "joined" | "status"
+export type ProfileStatusFilter = "all" | "active" | "inactive"
+
+export function ProfilesTable({
+  sort,
+  sortDirection,
+  roleFilter,
+  statusFilter,
+}: {
+  sort: ProfileSort
+  sortDirection: "asc" | "desc"
+  roleFilter: UserRole | "all"
+  statusFilter: ProfileStatusFilter
+}) {
   const { data: profiles, isPending, isError } = useProfiles()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -106,6 +119,20 @@ export function ProfilesTable() {
 
   const byId = new Map(profiles.map((profile) => [profile.id, profile]))
   const selected = profiles.find((profile) => profile.id === selectedId) ?? null
+  const visible = profiles
+    .filter((profile) => {
+      if (roleFilter !== "all" && profile.role !== roleFilter) {
+        return false
+      }
+      if (statusFilter === "active") {
+        return profile.is_active
+      }
+      if (statusFilter === "inactive") {
+        return !profile.is_active
+      }
+      return true
+    })
+    .sort((a, b) => compareProfiles(a, b, byId, sort, sortDirection))
 
   return (
     <>
@@ -114,7 +141,14 @@ export function ProfilesTable() {
           <ProfileTableHeads />
         </TableHeader>
         <TableBody>
-          {profiles.map((profile) => (
+          {visible.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={COLUMNS.length} className="h-24 text-center">
+                No profiles match this filter.
+              </TableCell>
+            </TableRow>
+          ) : null}
+          {visible.map((profile) => (
             <ProfileRow
               key={profile.id}
               profile={profile}
@@ -140,6 +174,25 @@ export function ProfilesTable() {
       />
     </>
   )
+}
+
+function compareProfiles(
+  a: ProfileListItem,
+  b: ProfileListItem,
+  byId: Map<string, ProfileListItem>,
+  sort: ProfileSort,
+  direction: "asc" | "desc"
+) {
+  const leadName = (profile: ProfileListItem) =>
+    profile.manager_id ? (byId.get(profile.manager_id)?.full_name ?? "") : ""
+  const value = {
+    name: a.full_name.localeCompare(b.full_name),
+    role: a.role.localeCompare(b.role),
+    joined: new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    status: Number(a.is_active) - Number(b.is_active),
+  }[sort]
+  const ranked = value || leadName(a).localeCompare(leadName(b))
+  return direction === "asc" ? ranked : -ranked
 }
 
 function ProfileTableHeads() {

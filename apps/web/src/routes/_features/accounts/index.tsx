@@ -4,9 +4,11 @@ import { createFileRoute } from "@tanstack/react-router"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  ArrowUpDownIcon,
   BookOpenIcon,
   Copy01Icon,
   Csv01Icon,
+  FilterIcon,
   Loading03Icon,
   Pdf01Icon,
   Ticket03Icon,
@@ -18,7 +20,21 @@ import {
   type CreateInvitationInput,
   type UserRole,
 } from "@/schemas/manage-account-schema"
-import { ProfilesTable } from "./-profiles-table"
+import {
+  ProfilesTable,
+  type ProfileSort,
+  type ProfileStatusFilter,
+} from "./-profiles-table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { toast } from "@workspace/ui/components/toast"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -94,8 +110,19 @@ export const Route = createFileRoute("/_features/accounts/")({
   component: AccountsPage,
 })
 
+const SORT_LABEL: Record<ProfileSort, string> = {
+  name: "Name",
+  role: "Role",
+  joined: "Join date",
+  status: "Status",
+}
+
 function AccountsPage() {
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [sort, setSort] = useState<ProfileSort>("name")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all")
+  const [statusFilter, setStatusFilter] = useState<ProfileStatusFilter>("all")
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -117,13 +144,103 @@ function AccountsPage() {
             Download PDF
           </Button>
         </div>
-        <Button type="button" variant="secondary" className="border-border">
-          <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
-          Account Management Guide
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button type="button" variant="outline" />}
+            >
+              <HugeiconsIcon icon={ArrowUpDownIcon} data-icon="inline-start" />
+              Sort
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuGroup className="flex flex-col gap-px">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={sort}
+                  onValueChange={(value) => setSort(value as ProfileSort)}
+                >
+                  {(Object.keys(SORT_LABEL) as ProfileSort[]).map((key) => (
+                    <DropdownMenuRadioItem key={key} value={key}>
+                      {SORT_LABEL[key]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup className="flex flex-col gap-px">
+                <DropdownMenuRadioGroup
+                  value={sortDirection}
+                  onValueChange={(value) =>
+                    setSortDirection(value as "asc" | "desc")
+                  }
+                >
+                  <DropdownMenuRadioItem value="asc">
+                    Ascending
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="desc">
+                    Descending
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button type="button" variant="outline" />}
+            >
+              <HugeiconsIcon icon={FilterIcon} data-icon="inline-start" />
+              Filter
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuGroup className="flex flex-col gap-px">
+                <DropdownMenuLabel>Status</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={statusFilter}
+                  onValueChange={(value) =>
+                    setStatusFilter(value as ProfileStatusFilter)
+                  }
+                >
+                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="active">
+                    Active
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="inactive">
+                    Inactive
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup className="flex flex-col gap-px">
+                <DropdownMenuLabel>Role</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={roleFilter}
+                  onValueChange={(value) =>
+                    setRoleFilter(value as UserRole | "all")
+                  }
+                >
+                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                  {ROLES.map((role) => (
+                    <DropdownMenuRadioItem key={role} value={role}>
+                      {ROLE_LABEL[role]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button type="button" variant="secondary" className="border-border">
+            <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
+            Account Management Guide
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-auto">
-        <ProfilesTable />
+        <ProfilesTable
+          sort={sort}
+          sortDirection={sortDirection}
+          roleFilter={roleFilter}
+          statusFilter={statusFilter}
+        />
       </div>
       <CreateInviteCodeDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </div>
