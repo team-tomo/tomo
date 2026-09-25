@@ -3,17 +3,16 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AtIcon,
   Calendar03Icon,
-  Call02Icon,
   CheckmarkCircle02Icon,
   Mail01Icon,
   Shield01Icon,
   UserIcon,
   UserMultiple02Icon,
-  WorkIcon,
 } from "@hugeicons/core-free-icons"
 import { useProfiles } from "@/hooks/use-account"
 import type { ProfileListItem } from "@/services/account-service"
 import type { UserRole } from "@/schemas/manage-account-schema"
+import { ProfileDrawer } from "./-profile-drawer"
 import { getInitials } from "@workspace/ui/lib/utils"
 import { Badge } from "@workspace/ui/components/badge"
 import {
@@ -21,13 +20,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@workspace/ui/components/drawer"
 import {
   Empty,
   EmptyDescription,
@@ -112,13 +104,8 @@ export function ProfilesTable() {
     )
   }
 
-  const names = new Map(
-    profiles.map((profile) => [profile.id, profile.full_name])
-  )
+  const byId = new Map(profiles.map((profile) => [profile.id, profile]))
   const selected = profiles.find((profile) => profile.id === selectedId) ?? null
-  const selectedLead = selected?.manager_id
-    ? (names.get(selected.manager_id) ?? "—")
-    : "—"
 
   return (
     <>
@@ -133,8 +120,8 @@ export function ProfilesTable() {
               profile={profile}
               lead={
                 profile.manager_id
-                  ? (names.get(profile.manager_id) ?? "—")
-                  : "—"
+                  ? (byId.get(profile.manager_id) ?? null)
+                  : null
               }
               selected={profile.id === selectedId}
               onSelect={() => setSelectedId(profile.id)}
@@ -144,7 +131,7 @@ export function ProfilesTable() {
       </Table>
       <ProfileDrawer
         profile={selected}
-        lead={selectedLead}
+        profiles={profiles}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedId(null)
@@ -181,7 +168,7 @@ function ProfileRow({
   onSelect,
 }: {
   profile: ProfileListItem
-  lead: string
+  lead: ProfileListItem | null
   selected: boolean
   onSelect: () => void
 }) {
@@ -219,7 +206,19 @@ function ProfileRow({
           {ROLE_LABEL[profile.role]}
         </Badge>
       </TableCell>
-      <TableCell>{lead}</TableCell>
+      <TableCell>
+        {lead ? (
+          <div className="flex items-center gap-2">
+            <Avatar size="sm">
+              <AvatarImage src={lead.avatar_url ?? ""} alt={lead.full_name} />
+              <AvatarFallback>{getInitials(lead.full_name)}</AvatarFallback>
+            </Avatar>
+            <span>{lead.full_name}</span>
+          </div>
+        ) : (
+          "—"
+        )}
+      </TableCell>
       <TableCell>{joinDate.format(new Date(profile.created_at))}</TableCell>
       <TableCell>
         <Badge
@@ -234,107 +233,6 @@ function ProfileRow({
         </Badge>
       </TableCell>
     </TableRow>
-  )
-}
-
-function ProfileDrawer({
-  profile,
-  lead,
-  onOpenChange,
-}: {
-  profile: ProfileListItem | null
-  lead: string
-  onOpenChange: (open: boolean) => void
-}) {
-  return (
-    <Drawer
-      open={profile != null}
-      onOpenChange={onOpenChange}
-      swipeDirection="right"
-    >
-      <DrawerContent>
-        {profile ? (
-          <>
-            <DrawerHeader className="flex-row items-center gap-3">
-              <Avatar>
-                <AvatarImage
-                  src={profile.avatar_url ?? ""}
-                  alt={profile.full_name}
-                />
-                <AvatarFallback>
-                  {getInitials(profile.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex min-w-0 flex-col gap-1">
-                <DrawerTitle className="truncate">
-                  {profile.full_name}
-                </DrawerTitle>
-                <DrawerDescription className="truncate">
-                  {profile.email}
-                </DrawerDescription>
-              </div>
-            </DrawerHeader>
-            <div className="flex flex-col gap-4 overflow-y-auto p-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={ROLE_BADGE[profile.role]}>
-                  {ROLE_LABEL[profile.role]}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={
-                    profile.is_active
-                      ? "border-current bg-green-500/15 text-green-700 dark:text-green-300"
-                      : "border-current bg-destructive/10 text-destructive"
-                  }
-                >
-                  {profile.is_active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-              <dl className="flex flex-col gap-3">
-                <ProfileDetail icon={AtIcon} label="Username">
-                  {profile.username || "—"}
-                </ProfileDetail>
-                <ProfileDetail icon={WorkIcon} label="Job title">
-                  {profile.job_title || "—"}
-                </ProfileDetail>
-                <ProfileDetail icon={Call02Icon} label="Phone">
-                  {profile.phone || "—"}
-                </ProfileDetail>
-                <ProfileDetail icon={UserMultiple02Icon} label="Lead">
-                  {lead}
-                </ProfileDetail>
-                <ProfileDetail icon={Calendar03Icon} label="Join date">
-                  {joinDate.format(new Date(profile.created_at))}
-                </ProfileDetail>
-                <ProfileDetail icon={UserIcon} label="Bio">
-                  {profile.bio || "—"}
-                </ProfileDetail>
-              </dl>
-            </div>
-          </>
-        ) : null}
-      </DrawerContent>
-    </Drawer>
-  )
-}
-
-function ProfileDetail({
-  icon,
-  label,
-  children,
-}: {
-  icon: typeof UserIcon
-  label: string
-  children: string
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <dt className="inline-flex items-center gap-1.5 text-muted-foreground">
-        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
-        {label}
-      </dt>
-      <dd className="text-foreground">{children}</dd>
-    </div>
   )
 }
 
