@@ -118,7 +118,7 @@ class AccountService:
             response = (
                 await service_client.from_(_PROFILES)
                 .select(
-                    "id, full_name, username, email, avatar_url, role, is_active, manager_id, created_at"
+                    "id, full_name, username, email, avatar_url, role, is_active, job_title, bio, phone, manager_id, created_at"
                 )
                 .order("full_name")
                 .execute()

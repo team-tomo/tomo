@@ -13,6 +13,9 @@ export type ProfileListItem = {
   avatar_url: string | null
   role: UserRole
   is_active: boolean
+  job_title: string | null
+  bio: string | null
+  phone: string | null
   manager_id: string | null
   created_at: string
 }

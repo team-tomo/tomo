@@ -29,6 +29,9 @@ class ProfileListItemSchema(BaseModel):
     avatar_url: str | None = None
     role: str
     is_active: bool
+    job_title: str | None = None
+    bio: str | None = None
+    phone: str | None = None
     manager_id: UUID | None = None
     created_at: datetime
 
