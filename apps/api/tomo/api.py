@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from tomo.account.endpoints import router as account_router
+from tomo.actuals.endpoints import router as actuals_router
 from tomo.auth.endpoints import router as auth_router
 from tomo.chat.endpoints import router as chat_router
 from tomo.healthz.endpoints import router as healthz_router
@@ -21,3 +22,5 @@ router.include_router(account_router)
 router.include_router(chat_router)
 # /api/v1/leave - leave endpoints
 router.include_router(leave_router)
+# /api/v1/actuals - actuals endpoints
+router.include_router(actuals_router)
