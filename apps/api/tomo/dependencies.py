@@ -12,6 +12,7 @@ from supabase import (
 )
 
 from tomo.account.service import AccountService, account_service
+from tomo.actuals.service import ActualService, actual_service
 from tomo.auth.service import AuthService, auth_service
 from tomo.chat.service import ChatService, chat_service
 from tomo.context import AuthContext
@@ -161,3 +162,12 @@ def get_leave_service() -> LeaveService:
 
 
 LeaveServiceDependency = Annotated[LeaveService, Depends(get_leave_service)]
+
+
+def get_actual_service() -> ActualService:
+    """Returns the actual service instance."""
+
+    return actual_service
+
+
+ActualServiceDependency = Annotated[ActualService, Depends(get_actual_service)]
