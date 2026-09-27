@@ -20,6 +20,18 @@ async def get_actuals(
     return await service.get_actuals(auth_context)
 
 
+@router.get("/{actual_id}")
+@limiter.limit("20/minute")
+async def get_actuals_by_id(
+    request: Request,
+    actual_id: UUID,
+    auth_context: AuthContextDependency,
+    service: ActualServiceDependency,
+) -> ActualSchema:
+    """Get an specific actual."""
+    return await service.get_actuals_by_id(actual_id, auth_context)
+
+
 @router.post("")
 @limiter.limit("20/minute")
 async def create_actual(
