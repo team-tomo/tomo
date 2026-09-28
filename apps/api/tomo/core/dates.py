@@ -39,6 +39,8 @@ class AppDates:
     month_end: date
     last_month_start: date
     last_month_end: date
+    actuals_week_start: date
+    actuals_week_end: date
 
     @property
     def calendar(self) -> str:
@@ -66,6 +68,8 @@ class AppDates:
             month_end=self.month_end.isoformat(),
             last_month_start=self.last_month_start.isoformat(),
             last_month_end=self.last_month_end.isoformat(),
+            actuals_week_start=self.actuals_week_start.isoformat(),
+            actuals_week_end=self.actuals_week_end.isoformat(),
             calendar=self.calendar,
         )
 
@@ -76,6 +80,9 @@ def app_dates(today: date | None = None) -> AppDates:
     this_week_end = this_week_start + timedelta(days=6)
     last_week_start = this_week_start - timedelta(days=7)
     last_week_end = this_week_start - timedelta(days=1)
+    # Weekly actuals run previous Thursday through this Wednesday.
+    actuals_week_start = last_week_start + timedelta(days=3)
+    actuals_week_end = this_week_start + timedelta(days=2)
     next_week_start = this_week_start + timedelta(days=7)
     next_week_end = this_week_end + timedelta(days=7)
     month_start = today.replace(day=1)
@@ -97,4 +104,6 @@ def app_dates(today: date | None = None) -> AppDates:
         month_end=month_end,
         last_month_start=last_month_end.replace(day=1),
         last_month_end=last_month_end,
+        actuals_week_start=actuals_week_start,
+        actuals_week_end=actuals_week_end,
     )
