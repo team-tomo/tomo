@@ -19,7 +19,7 @@ class ActualInputSchema(BaseModel):
         return stripped
 
 
-class ActualSchema(BaseModel):
+class ActualResponseSchema(BaseModel):
     id: UUID
     user_id: UUID
     date: date

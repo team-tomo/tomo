@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
 
-from tomo.actuals.schemas import ActualInputSchema, ActualSchema
+from tomo.actuals.schemas import ActualInputSchema, ActualResponseSchema
 from tomo.context import AuthContext
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,9 @@ _ACTUALS = "actuals"
 
 
 class ActualService:
-    async def list_actuals(self, auth_context: AuthContext) -> list[ActualSchema]:
+    async def list_actuals(
+        self, auth_context: AuthContext
+    ) -> list[ActualResponseSchema]:
         """Return the signed-in profile's actuals, newest date first."""
 
         try:
@@ -32,11 +34,11 @@ class ActualService:
                 detail="Failed to list actuals",
             )
 
-        return [ActualSchema(**row) for row in response.data]
+        return [ActualResponseSchema(**row) for row in response.data]
 
     async def get_actual(
         self, actual_id: UUID, auth_context: AuthContext
-    ) -> ActualSchema:
+    ) -> ActualResponseSchema:
         """Return one actual owned by the signed-in profile."""
 
         try:
@@ -62,20 +64,18 @@ class ActualService:
                 detail="Actual not found",
             )
 
-        return ActualSchema(**row)
+        return ActualResponseSchema(**row)
 
     async def create_actual(
         self, auth_context: AuthContext, payload: ActualInputSchema
-    ) -> ActualSchema:
+    ) -> ActualResponseSchema:
         """Create an actual for the signed-in profile."""
 
         data = payload.model_dump(mode="json")
         data["user_id"] = auth_context.current_user_id
 
         try:
-            response = (
-                await auth_context.client.from_(_ACTUALS).insert(data).execute()
-            )
+            response = await auth_context.client.from_(_ACTUALS).insert(data).execute()
         except APIError as e:
             logger.error(f"Failed to create actual: {e}")
             raise HTTPException(
@@ -89,11 +89,11 @@ class ActualService:
                 detail="Failed to create actual",
             )
 
-        return ActualSchema(**response.data[0])
+        return ActualResponseSchema(**response.data[0])
 
     async def update_actual(
         self, actual_id: UUID, auth_context: AuthContext, payload: ActualInputSchema
-    ) -> ActualSchema:
+    ) -> ActualResponseSchema:
         """Update date, description, and hours on an actual the profile owns."""
 
         data = payload.model_dump(mode="json")
@@ -119,7 +119,7 @@ class ActualService:
                 detail="Actual not found",
             )
 
-        return ActualSchema(**response.data[0])
+        return ActualResponseSchema(**response.data[0])
 
 
 actual_service = ActualService()

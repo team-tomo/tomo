@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request
 
-from tomo.actuals.schemas import ActualInputSchema, ActualSchema
+from tomo.actuals.schemas import ActualInputSchema, ActualResponseSchema
 from tomo.core.rate_limiter import limiter
 from tomo.dependencies import ActualServiceDependency, AuthContextDependency
 
@@ -15,7 +15,7 @@ async def list_actuals(
     request: Request,
     auth_context: AuthContextDependency,
     service: ActualServiceDependency,
-) -> list[ActualSchema]:
+) -> list[ActualResponseSchema]:
     """List the signed-in profile's actuals."""
     return await service.list_actuals(auth_context)
 
@@ -27,7 +27,7 @@ async def get_actual(
     actual_id: UUID,
     auth_context: AuthContextDependency,
     service: ActualServiceDependency,
-) -> ActualSchema:
+) -> ActualResponseSchema:
     """Get one actual owned by the signed-in profile."""
     return await service.get_actual(actual_id, auth_context)
 
@@ -39,7 +39,7 @@ async def create_actual(
     auth_context: AuthContextDependency,
     service: ActualServiceDependency,
     payload: ActualInputSchema,
-) -> ActualSchema:
+) -> ActualResponseSchema:
     """Create an actual for the signed-in profile."""
     return await service.create_actual(auth_context, payload)
 
@@ -52,6 +52,6 @@ async def update_actual(
     auth_context: AuthContextDependency,
     service: ActualServiceDependency,
     payload: ActualInputSchema,
-) -> ActualSchema:
+) -> ActualResponseSchema:
     """Update an actual owned by the signed-in profile."""
     return await service.update_actual(actual_id, auth_context, payload)
