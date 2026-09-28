@@ -18,6 +18,7 @@ from pydantic_ai.messages import (
 )
 
 from tomo.account.service import AccountService, account_service
+from tomo.actuals.service import ActualService, actual_service
 from tomo.chat.deps import ChatDeps, LeaveDrafts
 from tomo.chat.orchestrator import momo
 from tomo.chat.schemas import (
@@ -65,10 +66,12 @@ class ChatService:
         timesheet_service: TimesheetService,
         account_service: AccountService,
         leave_service: LeaveService,
+        actual_service: ActualService,
     ):
         self._timesheet_service = timesheet_service
         self._account_service = account_service
         self._leave_service = leave_service
+        self._actual_service = actual_service
 
     async def _load_history(
         self, conversation_id: UUID, auth_context: AuthContext, *, must_exist: bool
@@ -425,4 +428,6 @@ def _conversation(row: dict) -> ConversationSchema:
     )
 
 
-chat_service = ChatService(timesheet_service, account_service, leave_service)
+chat_service = ChatService(
+    timesheet_service, account_service, leave_service, actual_service
+)

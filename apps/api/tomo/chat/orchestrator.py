@@ -3,6 +3,7 @@ from collections.abc import AsyncIterable
 from pydantic_ai import Agent, AgentStreamEvent, RunContext
 from pydantic_ai_harness import SubAgent, SubAgents
 
+from tomo.chat.agents.actuals import actuals_agent
 from tomo.chat.agents.leave import leave_agent
 from tomo.chat.agents.timesheet import timesheet_agent
 from tomo.chat.deps import ChatDeps
@@ -32,7 +33,11 @@ momo = Agent(
     instructions=lambda: app_dates().format(INSTRUCTIONS),
     capabilities=[
         SubAgents(
-            agents=[SubAgent(timesheet_agent), SubAgent(leave_agent)],
+            agents=[
+                SubAgent(timesheet_agent),
+                SubAgent(leave_agent),
+                SubAgent(actuals_agent),
+            ],
             event_stream_handler=forward_status,
         )
     ],
