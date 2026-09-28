@@ -1,5 +1,6 @@
 from datetime import date
 
+from tomo.chat.agents.actuals.prompts import INSTRUCTIONS as SHIGOTO_INSTRUCTIONS
 from tomo.chat.agents.leave.prompts import INSTRUCTIONS as KYU_INSTRUCTIONS
 from tomo.chat.agents.timesheet.prompts import INSTRUCTIONS as TOKI_INSTRUCTIONS
 from tomo.chat.prompts import INSTRUCTIONS as MOMO_INSTRUCTIONS
@@ -88,17 +89,36 @@ def test_sunday_next_week_wednesday_is_in_calendar() -> None:
     assert "Sunday 2026-09-27" in dates.calendar
 
 
+def test_actuals_week_is_previous_thursday_through_this_wednesday() -> None:
+    tuesday = app_dates(date(2026, 9, 15))
+    assert tuesday.actuals_week_start == date(2026, 9, 10)
+    assert tuesday.actuals_week_end == date(2026, 9, 16)
+
+    monday = app_dates(date(2026, 9, 14))
+    assert monday.actuals_week_start == date(2026, 9, 10)
+    assert monday.actuals_week_end == date(2026, 9, 16)
+
+    thursday = app_dates(date(2026, 1, 1))
+    assert thursday.actuals_week_start == date(2025, 12, 25)
+    assert thursday.actuals_week_end == date(2025, 12, 31)
+
+
 def test_agent_prompts_accept_app_dates() -> None:
     dates = app_dates(date(2026, 9, 20))
     momo = dates.format(MOMO_INSTRUCTIONS)
     toki = dates.format(TOKI_INSTRUCTIONS)
     kyu = dates.format(KYU_INSTRUCTIONS)
+    shigoto = dates.format(SHIGOTO_INSTRUCTIONS)
 
     assert "2026-09-21" in momo
     assert "Wednesday 2026-09-23" in momo
+    assert "2026-09-10" in momo
+    assert "2026-09-16" in momo
     assert "2026-09-21" in toki
     assert "2026-09-21" in kyu
     assert "Wednesday 2026-09-23" in kyu
+    assert "2026-09-10" in shigoto
+    assert "2026-09-16" in shigoto
 
 
 def test_agent_prompts_spell_out_this_month() -> None:
