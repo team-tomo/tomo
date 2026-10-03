@@ -181,8 +181,9 @@ function FeatureLayout() {
 
                     <Button
                       type="submit"
+                      variant="destructive"
                       form="clock-out-form"
-                      className="mt-4 w-full bg-destructive hover:bg-destructive/90"
+                      className="mt-4 w-full border border-destructive"
                       disabled={isClockingOut}
                     >
                       {isClockingOut ? (
