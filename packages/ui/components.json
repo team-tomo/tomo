@@ -18,6 +18,6 @@
     "ui": "@workspace/ui/components"
   },
   "rtl": false,
-  "menuColor": "inverted",
+  "menuColor": "default",
   "menuAccent": "subtle"
 }
