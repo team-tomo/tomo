@@ -4,9 +4,9 @@ import {
   Calendar03Icon,
   Chart01Icon,
   Chat01Icon,
-  DashboardSquare01Icon,
+  GeometricShapes01Icon,
+  Home03Icon,
   IdentityCardIcon,
-  Layers01Icon,
   SpiralsIcon,
   StartUp02Icon,
   Target02Icon,
@@ -33,12 +33,12 @@ const data = {
     {
       title: "Dashboard",
       url: "/",
-      icon: <HugeiconsIcon icon={DashboardSquare01Icon} />,
+      icon: <HugeiconsIcon icon={Home03Icon} />,
     },
     {
-      title: "Workflows",
-      url: "/workflows",
-      icon: <HugeiconsIcon icon={Layers01Icon} />,
+      title: "Agents",
+      url: "/agents",
+      icon: <HugeiconsIcon icon={GeometricShapes01Icon} />,
     },
     {
       title: "Timesheet",
@@ -46,14 +46,14 @@ const data = {
       icon: <HugeiconsIcon icon={Calendar03Icon} />,
     },
     {
-      title: "Analytics",
-      url: "/analytics",
-      icon: <HugeiconsIcon icon={Chart01Icon} />,
-    },
-    {
       title: "Trainings",
       url: "/trainings",
       icon: <HugeiconsIcon icon={Target02Icon} />,
+    },
+    {
+      title: "Analytics",
+      url: "/analytics",
+      icon: <HugeiconsIcon icon={Chart01Icon} />,
     },
     {
       title: "Engagements",
@@ -87,7 +87,7 @@ function isPathActive(pathname: string, url: string) {
 }
 
 const navItemClassName =
-  "hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground"
+  "text-foreground/60 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground dark:text-muted-foreground dark:hover:text-sidebar-primary-foreground dark:data-active:text-sidebar-primary-foreground"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()

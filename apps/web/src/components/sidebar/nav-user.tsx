@@ -80,7 +80,7 @@ export function NavUser({ user }: { user: CurrentUser }) {
           >
             <Avatar className="size-5">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="bg-primary text-primary-foreground">
+              <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
