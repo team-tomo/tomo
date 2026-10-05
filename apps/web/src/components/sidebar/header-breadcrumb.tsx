@@ -1,6 +1,4 @@
 import { Link, useLocation } from "@tanstack/react-router"
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,13 +29,7 @@ export default function HeaderBreadcrumb() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbPage className="flex items-center gap-2 text-muted-foreground">
-              <span className="text-base font-bold text-sidebar-primary">
-                Tomo Platform
-              </span>
-              <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />{" "}
-              Dashboard
-            </BreadcrumbPage>
+            <BreadcrumbPage className="text-xs">Dashboard</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
