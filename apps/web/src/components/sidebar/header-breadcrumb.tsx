@@ -29,7 +29,9 @@ export default function HeaderBreadcrumb() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbPage className="text-xs">Dashboard</BreadcrumbPage>
+            <BreadcrumbPage className="text-base font-medium">
+              Dashboard
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

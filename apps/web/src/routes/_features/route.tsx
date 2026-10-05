@@ -4,9 +4,9 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Appointment01Icon,
+  Bug01Icon,
   CalendarRemove01Icon,
   ChatFeedbackIcon,
-  HelpCircleIcon,
   Loading03Icon,
   Moon02Icon,
   Sun03Icon,
@@ -24,6 +24,11 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import HeaderBreadcrumb from "@/components/sidebar/header-breadcrumb"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@workspace/ui/components/sidebar"
 import { MomoChat, MomoChatPanel } from "@/components/chat/momo-chat"
@@ -45,6 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
+import { Separator } from "@workspace/ui/components/separator"
 
 export const Route = createFileRoute("/_features")({
   component: FeatureLayout,
@@ -65,38 +71,53 @@ function ThemeToggle() {
     theme === "dark" ||
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches)
+  const label = isDark ? "Switch to light theme" : "Switch to dark theme"
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon"
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-    >
-      <HugeiconsIcon icon={isDark ? Sun03Icon : Moon02Icon} />
-    </Button>
-  )
-}
-
-function SupportButton() {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon"
-      aria-label="Questions and support"
-    >
-      <HugeiconsIcon icon={HelpCircleIcon} />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={label}
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+          />
+        }
+      >
+        <HugeiconsIcon icon={isDark ? Sun03Icon : Moon02Icon} />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   )
 }
 
 function FeedbackButton() {
   return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Feedback"
+          />
+        }
+      >
+        <HugeiconsIcon icon={ChatFeedbackIcon} />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">Feedback</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function ReportBugButton() {
+  return (
     <Button type="button" variant="outline">
-      <HugeiconsIcon icon={ChatFeedbackIcon} data-icon="inline-start" />
-      Feedback
+      <HugeiconsIcon icon={Bug01Icon} data-icon="inline-start" />
+      Report a bug
     </Button>
   )
 }
@@ -142,8 +163,9 @@ function FeatureLayout() {
             <HeaderBreadcrumb />
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
-              <SupportButton />
               <FeedbackButton />
+              <ReportBugButton />
+              <Separator orientation="vertical" />
               <AlertDialog
                 open={open}
                 onOpenChange={handleClockOutDialogOpenChange}
