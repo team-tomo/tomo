@@ -5,7 +5,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Appointment01Icon,
   CalendarRemove01Icon,
+  ChatFeedbackIcon,
+  HelpCircleIcon,
   Loading03Icon,
+  Moon02Icon,
+  Sun03Icon,
 } from "@hugeicons/core-free-icons"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { supabase } from "@/lib/supabase"
@@ -15,17 +19,14 @@ import {
   useClockOut,
   useTodayAttendanceStatus,
 } from "@/hooks/use-timesheet"
+import { useTheme } from "@/components/theme-provider"
 import { Textarea } from "@workspace/ui/components/textarea"
 import HeaderBreadcrumb from "@/components/sidebar/header-breadcrumb"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@workspace/ui/components/sidebar"
-import {
-  MomoChat,
-  MomoChatPanel,
-  MomoChatTrigger,
-} from "@/components/chat/momo-chat"
+import { MomoChat, MomoChatPanel } from "@/components/chat/momo-chat"
 import {
   Field,
   FieldDescription,
@@ -57,6 +58,48 @@ export const Route = createFileRoute("/_features")({
     }
   },
 })
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      <HugeiconsIcon icon={isDark ? Sun03Icon : Moon02Icon} />
+    </Button>
+  )
+}
+
+function SupportButton() {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      aria-label="Questions and support"
+    >
+      <HugeiconsIcon icon={HelpCircleIcon} />
+    </Button>
+  )
+}
+
+function FeedbackButton() {
+  return (
+    <Button type="button" variant="outline">
+      <HugeiconsIcon icon={ChatFeedbackIcon} data-icon="inline-start" />
+      Feedback
+    </Button>
+  )
+}
 
 function FeatureLayout() {
   const [open, setOpen] = useState<boolean>(false)
@@ -98,6 +141,9 @@ function FeatureLayout() {
           <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-2">
             <HeaderBreadcrumb />
             <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
+              <SupportButton />
+              <FeedbackButton />
               <AlertDialog
                 open={open}
                 onOpenChange={handleClockOutDialogOpenChange}
@@ -114,7 +160,6 @@ function FeatureLayout() {
                   </AlertDialogTrigger>
                 ) : (
                   <Button
-                    className="bg-green-600 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-600 disabled:opacity-50"
                     disabled={(!canClockIn && !canClockOut) || isClockingIn}
                     onClick={() => clockInMutation()}
                   >
@@ -206,7 +251,6 @@ function FeatureLayout() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <MomoChatTrigger />
             </div>
           </header>
           <div className="flex min-h-0 flex-1 overflow-hidden">

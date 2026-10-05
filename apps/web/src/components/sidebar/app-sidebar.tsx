@@ -87,7 +87,7 @@ function isPathActive(pathname: string, url: string) {
 }
 
 const navItemClassName =
-  "text-foreground/60 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground dark:text-muted-foreground dark:hover:text-sidebar-primary-foreground dark:data-active:text-sidebar-primary-foreground"
+  "text-foreground/60 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground dark:text-muted-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground dark:data-active:bg-sidebar-accent dark:data-active:text-sidebar-accent-foreground"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
