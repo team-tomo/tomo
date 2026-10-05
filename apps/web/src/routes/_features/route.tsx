@@ -92,7 +92,7 @@ function FeatureLayout() {
 
   return (
     <MomoChat>
-      <SidebarProvider defaultOpen={false}>
+      <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="h-svh overflow-hidden">
           <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-2">

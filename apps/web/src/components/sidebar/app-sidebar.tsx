@@ -21,6 +21,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -67,14 +68,14 @@ const data = {
   ],
   adminNav: [
     {
-      title: "Manage Accounts",
-      url: "/accounts",
-      icon: <HugeiconsIcon icon={IdentityCardIcon} />,
-    },
-    {
       title: "Operations",
       url: "/operations",
       icon: <HugeiconsIcon icon={StartUp02Icon} />,
+    },
+    {
+      title: "Manage Accounts",
+      url: "/accounts",
+      icon: <HugeiconsIcon icon={IdentityCardIcon} />,
     },
   ],
 }
@@ -95,16 +96,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="h-12 shrink-0 justify-center border-b bg-sidebar-primary px-2 py-0">
+      <SidebarHeader className="h-12 shrink-0 justify-center border-b px-2 py-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="h-8 p-0 group-data-[collapsible=icon]:p-0! hover:bg-transparent active:bg-transparent"
+              className="h-8 gap-2 p-0 group-data-[collapsible=icon]:p-0! hover:bg-transparent active:bg-transparent"
               render={<a href="/" />}
             >
-              <div className="flex size-8 shrink-0 items-center justify-center text-sidebar-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
                 <HugeiconsIcon icon={SpiralsIcon} className="size-6!" />
               </div>
+              <span className="truncate text-base font-bold group-data-[collapsible=icon]:hidden">
+                Tomo Platform
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -116,10 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {data.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={{
-                      children: item.title,
-                      hidden: false,
-                    }}
+                    tooltip={item.title}
                     className={navItemClassName}
                     onClick={() =>
                       item.url !== "#" && navigate({ to: item.url })
@@ -133,14 +134,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
             <Separator className="my-2" />
+            <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarMenu>
               {data.adminNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={{
-                      children: item.title,
-                      hidden: false,
-                    }}
+                    tooltip={item.title}
                     className={navItemClassName}
                     onClick={() =>
                       item.url !== "#" && navigate({ to: item.url })
