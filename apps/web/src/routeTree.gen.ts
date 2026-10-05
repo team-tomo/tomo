@@ -18,11 +18,16 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-passw
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as FeaturesAccountsIndexRouteImport } from './routes/_features/accounts/index'
+import { Route as FeaturesAgentsIndexRouteImport } from './routes/_features/agents/index'
+import { Route as FeaturesAnalyticsIndexRouteImport } from './routes/_features/analytics/index'
+import { Route as FeaturesDirectoryIndexRouteImport } from './routes/_features/directory/index'
+import { Route as FeaturesEngagementsIndexRouteImport } from './routes/_features/engagements/index'
 import { Route as FeaturesSettingsIndexRouteImport } from './routes/_features/settings/index'
 import { Route as FeaturesTimesheetIndexRouteImport } from './routes/_features/timesheet/index'
 import { Route as FeaturesTimesheetActualsRouteImport } from './routes/_features/timesheet/actuals'
 import { Route as FeaturesTimesheetAttendanceRouteImport } from './routes/_features/timesheet/attendance'
 import { Route as FeaturesTimesheetLeavesRouteImport } from './routes/_features/timesheet/leaves'
+import { Route as FeaturesTrainingsIndexRouteImport } from './routes/_features/trainings/index'
 import { Route as FeaturesTimesheetLeavesIdRouteImport } from './routes/_features/timesheet/leaves.$id'
 
 const FeaturesRouteRoute = FeaturesRouteRouteImport.update({
@@ -69,6 +74,27 @@ const FeaturesAccountsIndexRoute = FeaturesAccountsIndexRouteImport.update({
   path: '/accounts/',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
+const FeaturesAgentsIndexRoute = FeaturesAgentsIndexRouteImport.update({
+  id: '/agents/',
+  path: '/agents/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesAnalyticsIndexRoute = FeaturesAnalyticsIndexRouteImport.update({
+  id: '/analytics/',
+  path: '/analytics/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesDirectoryIndexRoute = FeaturesDirectoryIndexRouteImport.update({
+  id: '/directory/',
+  path: '/directory/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesEngagementsIndexRoute =
+  FeaturesEngagementsIndexRouteImport.update({
+    id: '/engagements/',
+    path: '/engagements/',
+    getParentRoute: () => FeaturesRouteRoute,
+  } as any)
 const FeaturesSettingsIndexRoute = FeaturesSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -96,6 +122,11 @@ const FeaturesTimesheetLeavesRoute = FeaturesTimesheetLeavesRouteImport.update({
   path: '/leaves',
   getParentRoute: () => FeaturesTimesheetRouteRoute,
 } as any)
+const FeaturesTrainingsIndexRoute = FeaturesTrainingsIndexRouteImport.update({
+  id: '/trainings/',
+  path: '/trainings/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
 const FeaturesTimesheetLeavesIdRoute =
   FeaturesTimesheetLeavesIdRouteImport.update({
     id: '/$id',
@@ -115,8 +146,13 @@ export interface FileRoutesByFullPath {
   '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts/': typeof FeaturesAccountsIndexRoute
+  '/agents/': typeof FeaturesAgentsIndexRoute
+  '/analytics/': typeof FeaturesAnalyticsIndexRoute
+  '/directory/': typeof FeaturesDirectoryIndexRoute
+  '/engagements/': typeof FeaturesEngagementsIndexRoute
   '/settings/': typeof FeaturesSettingsIndexRoute
   '/timesheet/': typeof FeaturesTimesheetIndexRoute
+  '/trainings/': typeof FeaturesTrainingsIndexRoute
   '/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRoutesByTo {
@@ -129,8 +165,13 @@ export interface FileRoutesByTo {
   '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts': typeof FeaturesAccountsIndexRoute
+  '/agents': typeof FeaturesAgentsIndexRoute
+  '/analytics': typeof FeaturesAnalyticsIndexRoute
+  '/directory': typeof FeaturesDirectoryIndexRoute
+  '/engagements': typeof FeaturesEngagementsIndexRoute
   '/settings': typeof FeaturesSettingsIndexRoute
   '/timesheet': typeof FeaturesTimesheetIndexRoute
+  '/trainings': typeof FeaturesTrainingsIndexRoute
   '/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRoutesById {
@@ -147,8 +188,13 @@ export interface FileRoutesById {
   '/_features/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/_features/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/_features/accounts/': typeof FeaturesAccountsIndexRoute
+  '/_features/agents/': typeof FeaturesAgentsIndexRoute
+  '/_features/analytics/': typeof FeaturesAnalyticsIndexRoute
+  '/_features/directory/': typeof FeaturesDirectoryIndexRoute
+  '/_features/engagements/': typeof FeaturesEngagementsIndexRoute
   '/_features/settings/': typeof FeaturesSettingsIndexRoute
   '/_features/timesheet/': typeof FeaturesTimesheetIndexRoute
+  '/_features/trainings/': typeof FeaturesTrainingsIndexRoute
   '/_features/timesheet/leaves/$id': typeof FeaturesTimesheetLeavesIdRoute
 }
 export interface FileRouteTypes {
@@ -165,8 +211,13 @@ export interface FileRouteTypes {
     | '/timesheet/attendance'
     | '/timesheet/leaves'
     | '/accounts/'
+    | '/agents/'
+    | '/analytics/'
+    | '/directory/'
+    | '/engagements/'
     | '/settings/'
     | '/timesheet/'
+    | '/trainings/'
     | '/timesheet/leaves/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -179,8 +230,13 @@ export interface FileRouteTypes {
     | '/timesheet/attendance'
     | '/timesheet/leaves'
     | '/accounts'
+    | '/agents'
+    | '/analytics'
+    | '/directory'
+    | '/engagements'
     | '/settings'
     | '/timesheet'
+    | '/trainings'
     | '/timesheet/leaves/$id'
   id:
     | '__root__'
@@ -196,8 +252,13 @@ export interface FileRouteTypes {
     | '/_features/timesheet/attendance'
     | '/_features/timesheet/leaves'
     | '/_features/accounts/'
+    | '/_features/agents/'
+    | '/_features/analytics/'
+    | '/_features/directory/'
+    | '/_features/engagements/'
     | '/_features/settings/'
     | '/_features/timesheet/'
+    | '/_features/trainings/'
     | '/_features/timesheet/leaves/$id'
   fileRoutesById: FileRoutesById
 }
@@ -271,6 +332,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesAccountsIndexRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
+    '/_features/agents/': {
+      id: '/_features/agents/'
+      path: '/agents'
+      fullPath: '/agents/'
+      preLoaderRoute: typeof FeaturesAgentsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/analytics/': {
+      id: '/_features/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof FeaturesAnalyticsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/directory/': {
+      id: '/_features/directory/'
+      path: '/directory'
+      fullPath: '/directory/'
+      preLoaderRoute: typeof FeaturesDirectoryIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/engagements/': {
+      id: '/_features/engagements/'
+      path: '/engagements'
+      fullPath: '/engagements/'
+      preLoaderRoute: typeof FeaturesEngagementsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
     '/_features/settings/': {
       id: '/_features/settings/'
       path: '/settings'
@@ -305,6 +394,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/timesheet/leaves'
       preLoaderRoute: typeof FeaturesTimesheetLeavesRouteImport
       parentRoute: typeof FeaturesTimesheetRouteRoute
+    }
+    '/_features/trainings/': {
+      id: '/_features/trainings/'
+      path: '/trainings'
+      fullPath: '/trainings/'
+      preLoaderRoute: typeof FeaturesTrainingsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
     }
     '/_features/timesheet/leaves/$id': {
       id: '/_features/timesheet/leaves/$id'
@@ -354,14 +450,24 @@ interface FeaturesRouteRouteChildren {
   FeaturesTimesheetRouteRoute: typeof FeaturesTimesheetRouteRouteWithChildren
   FeaturesIndexRoute: typeof FeaturesIndexRoute
   FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
+  FeaturesAgentsIndexRoute: typeof FeaturesAgentsIndexRoute
+  FeaturesAnalyticsIndexRoute: typeof FeaturesAnalyticsIndexRoute
+  FeaturesDirectoryIndexRoute: typeof FeaturesDirectoryIndexRoute
+  FeaturesEngagementsIndexRoute: typeof FeaturesEngagementsIndexRoute
   FeaturesSettingsIndexRoute: typeof FeaturesSettingsIndexRoute
+  FeaturesTrainingsIndexRoute: typeof FeaturesTrainingsIndexRoute
 }
 
 const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
   FeaturesTimesheetRouteRoute: FeaturesTimesheetRouteRouteWithChildren,
   FeaturesIndexRoute: FeaturesIndexRoute,
   FeaturesAccountsIndexRoute: FeaturesAccountsIndexRoute,
+  FeaturesAgentsIndexRoute: FeaturesAgentsIndexRoute,
+  FeaturesAnalyticsIndexRoute: FeaturesAnalyticsIndexRoute,
+  FeaturesDirectoryIndexRoute: FeaturesDirectoryIndexRoute,
+  FeaturesEngagementsIndexRoute: FeaturesEngagementsIndexRoute,
   FeaturesSettingsIndexRoute: FeaturesSettingsIndexRoute,
+  FeaturesTrainingsIndexRoute: FeaturesTrainingsIndexRoute,
 }
 
 const FeaturesRouteRouteWithChildren = FeaturesRouteRoute._addFileChildren(

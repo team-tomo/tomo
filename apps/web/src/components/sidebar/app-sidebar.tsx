@@ -4,9 +4,9 @@ import {
   Calendar03Icon,
   Chart01Icon,
   Chat01Icon,
-  DashboardSquare01Icon,
+  GeometricShapes01Icon,
+  Home03Icon,
   IdentityCardIcon,
-  Layers01Icon,
   SpiralsIcon,
   StartUp02Icon,
   Target02Icon,
@@ -21,6 +21,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -32,12 +33,12 @@ const data = {
     {
       title: "Dashboard",
       url: "/",
-      icon: <HugeiconsIcon icon={DashboardSquare01Icon} />,
+      icon: <HugeiconsIcon icon={Home03Icon} />,
     },
     {
-      title: "Workflows",
-      url: "/workflows",
-      icon: <HugeiconsIcon icon={Layers01Icon} />,
+      title: "Agents",
+      url: "/agents",
+      icon: <HugeiconsIcon icon={GeometricShapes01Icon} />,
     },
     {
       title: "Timesheet",
@@ -45,14 +46,14 @@ const data = {
       icon: <HugeiconsIcon icon={Calendar03Icon} />,
     },
     {
-      title: "Analytics",
-      url: "/analytics",
-      icon: <HugeiconsIcon icon={Chart01Icon} />,
-    },
-    {
       title: "Trainings",
       url: "/trainings",
       icon: <HugeiconsIcon icon={Target02Icon} />,
+    },
+    {
+      title: "Analytics",
+      url: "/analytics",
+      icon: <HugeiconsIcon icon={Chart01Icon} />,
     },
     {
       title: "Engagements",
@@ -67,14 +68,14 @@ const data = {
   ],
   adminNav: [
     {
-      title: "Manage Accounts",
-      url: "/accounts",
-      icon: <HugeiconsIcon icon={IdentityCardIcon} />,
-    },
-    {
       title: "Operations",
       url: "/operations",
       icon: <HugeiconsIcon icon={StartUp02Icon} />,
+    },
+    {
+      title: "Manage Accounts",
+      url: "/accounts",
+      icon: <HugeiconsIcon icon={IdentityCardIcon} />,
     },
   ],
 }
@@ -86,7 +87,7 @@ function isPathActive(pathname: string, url: string) {
 }
 
 const navItemClassName =
-  "hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground"
+  "text-foreground/60 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground dark:text-muted-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground dark:data-active:bg-sidebar-accent dark:data-active:text-sidebar-accent-foreground"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
@@ -95,16 +96,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="h-12 shrink-0 justify-center border-b bg-sidebar-primary px-2 py-0">
+      <SidebarHeader className="h-12 shrink-0 justify-center border-b px-2 py-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="h-8 p-0 group-data-[collapsible=icon]:p-0! hover:bg-transparent active:bg-transparent"
+              className="h-8 gap-2 p-0 group-data-[collapsible=icon]:p-0! hover:bg-transparent active:bg-transparent"
               render={<a href="/" />}
             >
-              <div className="flex size-8 shrink-0 items-center justify-center text-sidebar-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
                 <HugeiconsIcon icon={SpiralsIcon} className="size-6!" />
               </div>
+              <span className="truncate text-base font-bold group-data-[collapsible=icon]:hidden">
+                Tomo Platform
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -116,10 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {data.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={{
-                      children: item.title,
-                      hidden: false,
-                    }}
+                    tooltip={item.title}
                     className={navItemClassName}
                     onClick={() =>
                       item.url !== "#" && navigate({ to: item.url })
@@ -133,14 +134,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
             <Separator className="my-2" />
+            <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarMenu>
               {data.adminNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={{
-                      children: item.title,
-                      hidden: false,
-                    }}
+                    tooltip={item.title}
                     className={navItemClassName}
                     onClick={() =>
                       item.url !== "#" && navigate({ to: item.url })

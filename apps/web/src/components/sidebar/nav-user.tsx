@@ -3,12 +3,12 @@ import { useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowBigUp,
   BadgeCheck,
   Bell,
   CreditCard,
   Loading03Icon,
   LogOut,
+  MoreVertical,
   Settings01Icon,
 } from "@hugeicons/core-free-icons"
 import { useSignOut } from "@/hooks/use-auth"
@@ -75,23 +75,22 @@ export function NavUser({ user }: { user: CurrentUser }) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground md:h-8 md:p-0"
-              />
+              <SidebarMenuButton className="py-0.5 group-data-[collapsible=icon]:p-0! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" />
             }
           >
-            <Avatar className="size-8">
+            <Avatar className="size-5">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="bg-primary text-primary-foreground">
+              <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs">{user.email}</span>
-            </div>
-            <HugeiconsIcon icon={ArrowBigUp} className="ml-auto size-4" />
+            <span className="truncate group-data-[collapsible=icon]:hidden">
+              {user.name}
+            </span>
+            <HugeiconsIcon
+              icon={MoreVertical}
+              className="ml-auto size-4 group-data-[collapsible=icon]:hidden"
+            />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="min-w-56"
