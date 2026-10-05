@@ -20,6 +20,7 @@ import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as FeaturesAccountsIndexRouteImport } from './routes/_features/accounts/index'
 import { Route as FeaturesAgentsIndexRouteImport } from './routes/_features/agents/index'
 import { Route as FeaturesAnalyticsIndexRouteImport } from './routes/_features/analytics/index'
+import { Route as FeaturesDirectoryIndexRouteImport } from './routes/_features/directory/index'
 import { Route as FeaturesEngagementsIndexRouteImport } from './routes/_features/engagements/index'
 import { Route as FeaturesSettingsIndexRouteImport } from './routes/_features/settings/index'
 import { Route as FeaturesTimesheetIndexRouteImport } from './routes/_features/timesheet/index'
@@ -83,6 +84,11 @@ const FeaturesAnalyticsIndexRoute = FeaturesAnalyticsIndexRouteImport.update({
   path: '/analytics/',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
+const FeaturesDirectoryIndexRoute = FeaturesDirectoryIndexRouteImport.update({
+  id: '/directory/',
+  path: '/directory/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
 const FeaturesEngagementsIndexRoute =
   FeaturesEngagementsIndexRouteImport.update({
     id: '/engagements/',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/accounts/': typeof FeaturesAccountsIndexRoute
   '/agents/': typeof FeaturesAgentsIndexRoute
   '/analytics/': typeof FeaturesAnalyticsIndexRoute
+  '/directory/': typeof FeaturesDirectoryIndexRoute
   '/engagements/': typeof FeaturesEngagementsIndexRoute
   '/settings/': typeof FeaturesSettingsIndexRoute
   '/timesheet/': typeof FeaturesTimesheetIndexRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof FeaturesAccountsIndexRoute
   '/agents': typeof FeaturesAgentsIndexRoute
   '/analytics': typeof FeaturesAnalyticsIndexRoute
+  '/directory': typeof FeaturesDirectoryIndexRoute
   '/engagements': typeof FeaturesEngagementsIndexRoute
   '/settings': typeof FeaturesSettingsIndexRoute
   '/timesheet': typeof FeaturesTimesheetIndexRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/_features/accounts/': typeof FeaturesAccountsIndexRoute
   '/_features/agents/': typeof FeaturesAgentsIndexRoute
   '/_features/analytics/': typeof FeaturesAnalyticsIndexRoute
+  '/_features/directory/': typeof FeaturesDirectoryIndexRoute
   '/_features/engagements/': typeof FeaturesEngagementsIndexRoute
   '/_features/settings/': typeof FeaturesSettingsIndexRoute
   '/_features/timesheet/': typeof FeaturesTimesheetIndexRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/accounts/'
     | '/agents/'
     | '/analytics/'
+    | '/directory/'
     | '/engagements/'
     | '/settings/'
     | '/timesheet/'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/agents'
     | '/analytics'
+    | '/directory'
     | '/engagements'
     | '/settings'
     | '/timesheet'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/_features/accounts/'
     | '/_features/agents/'
     | '/_features/analytics/'
+    | '/_features/directory/'
     | '/_features/engagements/'
     | '/_features/settings/'
     | '/_features/timesheet/'
@@ -332,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics/'
       preLoaderRoute: typeof FeaturesAnalyticsIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/directory/': {
+      id: '/_features/directory/'
+      path: '/directory'
+      fullPath: '/directory/'
+      preLoaderRoute: typeof FeaturesDirectoryIndexRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
     '/_features/engagements/': {
@@ -433,6 +452,7 @@ interface FeaturesRouteRouteChildren {
   FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
   FeaturesAgentsIndexRoute: typeof FeaturesAgentsIndexRoute
   FeaturesAnalyticsIndexRoute: typeof FeaturesAnalyticsIndexRoute
+  FeaturesDirectoryIndexRoute: typeof FeaturesDirectoryIndexRoute
   FeaturesEngagementsIndexRoute: typeof FeaturesEngagementsIndexRoute
   FeaturesSettingsIndexRoute: typeof FeaturesSettingsIndexRoute
   FeaturesTrainingsIndexRoute: typeof FeaturesTrainingsIndexRoute
@@ -444,6 +464,7 @@ const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
   FeaturesAccountsIndexRoute: FeaturesAccountsIndexRoute,
   FeaturesAgentsIndexRoute: FeaturesAgentsIndexRoute,
   FeaturesAnalyticsIndexRoute: FeaturesAnalyticsIndexRoute,
+  FeaturesDirectoryIndexRoute: FeaturesDirectoryIndexRoute,
   FeaturesEngagementsIndexRoute: FeaturesEngagementsIndexRoute,
   FeaturesSettingsIndexRoute: FeaturesSettingsIndexRoute,
   FeaturesTrainingsIndexRoute: FeaturesTrainingsIndexRoute,
