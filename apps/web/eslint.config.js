@@ -25,4 +25,13 @@ export default defineConfig([
       "react-refresh/only-export-components": "off",
     },
   },
+  {
+    files: ["src/components/chat/momo-chat.tsx"],
+    rules: {
+      "react-refresh/only-export-components": [
+        "error",
+        { allowExportNames: ["useMomoChat"] },
+      ],
+    },
+  },
 ])
