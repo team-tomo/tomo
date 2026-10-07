@@ -22,7 +22,8 @@ function formatLabel(segment: string) {
 export default function HeaderBreadcrumb() {
   const { pathname } = useLocation()
 
-  const segments = pathname.split("/").filter(Boolean)
+  const rawSegments = pathname.split("/").filter(Boolean)
+  const segments = rawSegments[0] === "agents" ? ["agents"] : rawSegments
 
   if (segments.length === 0) {
     return (
