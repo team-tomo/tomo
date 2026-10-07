@@ -9,6 +9,8 @@ export const chatKeys = {
   all: ["chat"] as const,
   latest: () => [...chatKeys.all, "latest"] as const,
   list: () => [...chatKeys.all, "list"] as const,
+  listWindow: (limit?: number) =>
+    [...chatKeys.list(), limit ?? "all"] as const,
   detail: (conversationId: string) =>
     [...chatKeys.all, "detail", conversationId] as const,
 }
@@ -22,10 +24,10 @@ export function useLatestConversation(enabled: boolean) {
   })
 }
 
-export function useConversations(enabled: boolean) {
+export function useConversations(enabled: boolean, limit?: number) {
   return useQuery({
-    queryKey: chatKeys.list(),
-    queryFn: listConversations,
+    queryKey: chatKeys.listWindow(limit),
+    queryFn: () => listConversations(limit),
     enabled,
   })
 }
