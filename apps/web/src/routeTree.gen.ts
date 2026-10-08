@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as FeaturesRouteRouteImport } from './routes/_features/route'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as FeaturesIndexRouteImport } from './routes/_features/index'
+import { Route as FeaturesAgentsRouteRouteImport } from './routes/_features/agents/route'
 import { Route as FeaturesTimesheetRouteRouteImport } from './routes/_features/timesheet/route'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -19,6 +20,7 @@ import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as FeaturesAccountsIndexRouteImport } from './routes/_features/accounts/index'
 import { Route as FeaturesAgentsIndexRouteImport } from './routes/_features/agents/index'
+import { Route as FeaturesAgentsConversationIdRouteImport } from './routes/_features/agents/$conversationId'
 import { Route as FeaturesAnalyticsIndexRouteImport } from './routes/_features/analytics/index'
 import { Route as FeaturesDirectoryIndexRouteImport } from './routes/_features/directory/index'
 import { Route as FeaturesEngagementsIndexRouteImport } from './routes/_features/engagements/index'
@@ -42,6 +44,11 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => FeaturesRouteRoute,
+} as any)
+const FeaturesAgentsRouteRoute = FeaturesAgentsRouteRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const FeaturesTimesheetRouteRoute = FeaturesTimesheetRouteRouteImport.update({
@@ -75,10 +82,16 @@ const FeaturesAccountsIndexRoute = FeaturesAccountsIndexRouteImport.update({
   getParentRoute: () => FeaturesRouteRoute,
 } as any)
 const FeaturesAgentsIndexRoute = FeaturesAgentsIndexRouteImport.update({
-  id: '/agents/',
-  path: '/agents/',
-  getParentRoute: () => FeaturesRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeaturesAgentsRouteRoute,
 } as any)
+const FeaturesAgentsConversationIdRoute =
+  FeaturesAgentsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => FeaturesAgentsRouteRoute,
+  } as any)
 const FeaturesAnalyticsIndexRoute = FeaturesAnalyticsIndexRouteImport.update({
   id: '/analytics/',
   path: '/analytics/',
@@ -137,11 +150,13 @@ const FeaturesTimesheetLeavesIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/agents': typeof FeaturesAgentsRouteRouteWithChildren
   '/timesheet': typeof FeaturesTimesheetRouteRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/': typeof AuthIndexRoute
+  '/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
   '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
@@ -161,6 +176,7 @@ export interface FileRoutesByTo {
   '/auth/signup': typeof AuthSignupRoute
   '/': typeof FeaturesIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
   '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
@@ -178,12 +194,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_features': typeof FeaturesRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
+  '/_features/agents': typeof FeaturesAgentsRouteRouteWithChildren
   '/_features/timesheet': typeof FeaturesTimesheetRouteRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/_features/': typeof FeaturesIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_features/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/_features/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
   '/_features/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/_features/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
@@ -202,11 +220,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/agents'
     | '/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/'
+    | '/agents/$conversationId'
     | '/timesheet/actuals'
     | '/timesheet/attendance'
     | '/timesheet/leaves'
@@ -226,6 +246,7 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/'
     | '/auth'
+    | '/agents/$conversationId'
     | '/timesheet/actuals'
     | '/timesheet/attendance'
     | '/timesheet/leaves'
@@ -242,12 +263,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_features'
     | '/auth'
+    | '/_features/agents'
     | '/_features/timesheet'
     | '/auth/reset-password'
     | '/auth/signin'
     | '/auth/signup'
     | '/_features/'
     | '/auth/'
+    | '/_features/agents/$conversationId'
     | '/_features/timesheet/actuals'
     | '/_features/timesheet/attendance'
     | '/_features/timesheet/leaves'
@@ -288,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof FeaturesIndexRouteImport
+      parentRoute: typeof FeaturesRouteRoute
+    }
+    '/_features/agents': {
+      id: '/_features/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof FeaturesAgentsRouteRouteImport
       parentRoute: typeof FeaturesRouteRoute
     }
     '/_features/timesheet': {
@@ -334,10 +364,17 @@ declare module '@tanstack/react-router' {
     }
     '/_features/agents/': {
       id: '/_features/agents/'
-      path: '/agents'
+      path: '/'
       fullPath: '/agents/'
       preLoaderRoute: typeof FeaturesAgentsIndexRouteImport
-      parentRoute: typeof FeaturesRouteRoute
+      parentRoute: typeof FeaturesAgentsRouteRoute
+    }
+    '/_features/agents/$conversationId': {
+      id: '/_features/agents/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/agents/$conversationId'
+      preLoaderRoute: typeof FeaturesAgentsConversationIdRouteImport
+      parentRoute: typeof FeaturesAgentsRouteRoute
     }
     '/_features/analytics/': {
       id: '/_features/analytics/'
@@ -412,6 +449,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface FeaturesAgentsRouteRouteChildren {
+  FeaturesAgentsConversationIdRoute: typeof FeaturesAgentsConversationIdRoute
+  FeaturesAgentsIndexRoute: typeof FeaturesAgentsIndexRoute
+}
+
+const FeaturesAgentsRouteRouteChildren: FeaturesAgentsRouteRouteChildren = {
+  FeaturesAgentsConversationIdRoute: FeaturesAgentsConversationIdRoute,
+  FeaturesAgentsIndexRoute: FeaturesAgentsIndexRoute,
+}
+
+const FeaturesAgentsRouteRouteWithChildren =
+  FeaturesAgentsRouteRoute._addFileChildren(FeaturesAgentsRouteRouteChildren)
+
 interface FeaturesTimesheetLeavesRouteChildren {
   FeaturesTimesheetLeavesIdRoute: typeof FeaturesTimesheetLeavesIdRoute
 }
@@ -447,10 +497,10 @@ const FeaturesTimesheetRouteRouteWithChildren =
   )
 
 interface FeaturesRouteRouteChildren {
+  FeaturesAgentsRouteRoute: typeof FeaturesAgentsRouteRouteWithChildren
   FeaturesTimesheetRouteRoute: typeof FeaturesTimesheetRouteRouteWithChildren
   FeaturesIndexRoute: typeof FeaturesIndexRoute
   FeaturesAccountsIndexRoute: typeof FeaturesAccountsIndexRoute
-  FeaturesAgentsIndexRoute: typeof FeaturesAgentsIndexRoute
   FeaturesAnalyticsIndexRoute: typeof FeaturesAnalyticsIndexRoute
   FeaturesDirectoryIndexRoute: typeof FeaturesDirectoryIndexRoute
   FeaturesEngagementsIndexRoute: typeof FeaturesEngagementsIndexRoute
@@ -459,10 +509,10 @@ interface FeaturesRouteRouteChildren {
 }
 
 const FeaturesRouteRouteChildren: FeaturesRouteRouteChildren = {
+  FeaturesAgentsRouteRoute: FeaturesAgentsRouteRouteWithChildren,
   FeaturesTimesheetRouteRoute: FeaturesTimesheetRouteRouteWithChildren,
   FeaturesIndexRoute: FeaturesIndexRoute,
   FeaturesAccountsIndexRoute: FeaturesAccountsIndexRoute,
-  FeaturesAgentsIndexRoute: FeaturesAgentsIndexRoute,
   FeaturesAnalyticsIndexRoute: FeaturesAnalyticsIndexRoute,
   FeaturesDirectoryIndexRoute: FeaturesDirectoryIndexRoute,
   FeaturesEngagementsIndexRoute: FeaturesEngagementsIndexRoute,

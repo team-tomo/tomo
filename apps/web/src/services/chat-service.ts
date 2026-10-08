@@ -184,8 +184,11 @@ export type ChatConversationSummary = {
   updated_at: string
 }
 
-export async function listConversations(): Promise<ChatConversationSummary[]> {
-  const res = await apiFetch("/chat")
+export async function listConversations(
+  limit?: number
+): Promise<ChatConversationSummary[]> {
+  const path = limit === undefined ? "/chat" : `/chat?limit=${limit}`
+  const res = await apiFetch(path)
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)

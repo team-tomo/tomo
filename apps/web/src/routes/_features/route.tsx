@@ -31,7 +31,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@workspace/ui/components/sidebar"
-import { MomoChat, MomoChatPanel } from "@/components/chat/momo-chat"
+import { MomoChat } from "@/components/chat/momo-chat"
 import {
   Field,
   FieldDescription,
@@ -279,7 +279,6 @@ function FeatureLayout() {
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <Outlet />
             </div>
-            <MomoChatPanel />
           </div>
         </SidebarInset>
       </SidebarProvider>

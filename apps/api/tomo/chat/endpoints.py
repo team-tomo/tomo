@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 from tomo.chat.schemas import (
@@ -46,9 +47,10 @@ async def list_conversations(
     request: Request,
     auth_context: AuthContextDependency,
     service: ChatServiceDependency,
+    limit: Annotated[int | None, Query(ge=1)] = None,
 ) -> list[ConversationSummarySchema]:
-    """List the last 10 conversations for the current user."""
-    return await service.list_conversations(auth_context)
+    """List conversations for the current user, newest first."""
+    return await service.list_conversations(auth_context, limit=limit)
 
 
 @router.get("/{conversation_id}")

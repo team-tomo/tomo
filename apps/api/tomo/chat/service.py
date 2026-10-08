@@ -279,19 +279,20 @@ class ChatService:
         return _conversation(response.data[0])
 
     async def list_conversations(
-        self, auth_context: AuthContext
+        self, auth_context: AuthContext, *, limit: int | None = None
     ) -> list[ConversationSummarySchema]:
-        """Return the last 10 conversation of the user"""
+        """Return conversation summaries, newest first."""
 
         try:
-            response = (
-                await auth_context.client.from_(_CHAT_CONVERSATIONS)
+            query = (
+                auth_context.client.from_(_CHAT_CONVERSATIONS)
                 .select("id, messages, updated_at")
                 .eq("user_id", auth_context.current_user_id)
                 .order("updated_at", desc=True)
-                .limit(10)
-                .execute()
             )
+            if limit is not None:
+                query = query.limit(limit)
+            response = await query.execute()
         except APIError as e:
             logger.error(f"Failed to list conversations: {e}")
             raise HTTPException(
