@@ -26,6 +26,7 @@ import { LeaveDraftCard } from "@/components/chat/leave-draft-card"
 import { useMomoChat } from "@/components/chat/momo-chat"
 import type { ChatStatus } from "@/services/chat-service"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Select,
   SelectContent,
@@ -375,6 +376,8 @@ function ModelSelect({ menuSide }: { menuSide: "top" | "bottom" }) {
 }
 
 const PREVIEW_COUNT = 5
+const PREVIOUS_CHAT_CARD =
+  "flex min-h-21 flex-col items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
 
 function PreviousChats() {
   const navigate = useNavigate()
@@ -393,9 +396,16 @@ function PreviousChats() {
   }
 
   return (
-    <section className="flex max-h-[45%] w-full shrink-0 flex-col gap-4 overflow-y-auto px-6 pt-2 pb-6">
+    <section
+      aria-busy={conversations.isLoading}
+      className="flex max-h-[45%] w-full shrink-0 flex-col gap-4 overflow-y-auto px-6 pt-2 pb-6"
+    >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">Previous chats ({items.length})</h2>
+        <h2 className="text-sm font-medium">
+          {conversations.isLoading
+            ? "Previous chats"
+            : `Previous chats (${items.length})`}
+        </h2>
         <div className="flex items-center gap-1">
           <Button
             type="button"
@@ -429,7 +439,21 @@ function PreviousChats() {
         </div>
       </div>
       {conversations.isLoading ? (
-        <p className="text-xs text-muted-foreground">Loading conversations</p>
+        <div className="grid w-full grid-cols-5 gap-3" aria-hidden>
+          {Array.from({ length: PREVIEW_COUNT }, (_, index) => (
+            <div key={index} className={PREVIOUS_CHAT_CARD}>
+              <Skeleton className="size-4 rounded-full" />
+              <span className="flex w-full flex-col">
+                <span className="flex h-4 w-4/5 items-center">
+                  <Skeleton className="h-3 w-full" />
+                </span>
+                <span className="flex h-4 w-3/5 items-center">
+                  <Skeleton className="h-3 w-full" />
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       ) : null}
       {conversations.isError ? (
         <p className="text-xs text-muted-foreground">
@@ -443,7 +467,10 @@ function PreviousChats() {
               key={conversation.id}
               type="button"
               disabled={isSelecting}
-              className="flex flex-col items-start gap-3 rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 hover:bg-muted/50 disabled:opacity-50"
+              className={cn(
+                PREVIOUS_CHAT_CARD,
+                "text-left hover:bg-muted/50 disabled:opacity-50"
+              )}
               onClick={() => {
                 void navigate({
                   to: "/agents/$conversationId",
