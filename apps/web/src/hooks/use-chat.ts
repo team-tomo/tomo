@@ -9,8 +9,7 @@ export const chatKeys = {
   all: ["chat"] as const,
   latest: () => [...chatKeys.all, "latest"] as const,
   list: () => [...chatKeys.all, "list"] as const,
-  listWindow: (limit?: number) =>
-    [...chatKeys.list(), limit ?? "all"] as const,
+  listWindow: (limit?: number) => [...chatKeys.list(), limit ?? "all"] as const,
   detail: (conversationId: string) =>
     [...chatKeys.all, "detail", conversationId] as const,
 }

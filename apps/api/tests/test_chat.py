@@ -143,7 +143,7 @@ class TestListConversations:
         assert [row["id"] for row in body] == [newer["id"], older["id"]]
         assert [row["title"] for row in body] == ["newer", "older"]
 
-    def test_caps_at_ten(self, chat_api, chat_table) -> None:
+    def test_returns_all_unless_limited(self, chat_api, chat_table) -> None:
         ids: list[str] = []
         for index in range(11):
             seeded = chat_table.seed(
@@ -156,7 +156,12 @@ class TestListConversations:
         response = chat_api.get(LIST)
 
         assert response.status_code == 200
-        assert [row["id"] for row in response.json()] == list(reversed(ids[1:]))
+        assert [row["id"] for row in response.json()] == list(reversed(ids))
+
+        capped = chat_api.get(LIST, params={"limit": 10})
+
+        assert capped.status_code == 200
+        assert [row["id"] for row in capped.json()] == list(reversed(ids[1:]))
 
 
 class TestLatestConversation:
