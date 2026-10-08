@@ -27,6 +27,9 @@ import { useMomoChat } from "@/components/chat/momo-chat"
 import type { ChatStatus } from "@/services/chat-service"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Message, MessageContent } from "@workspace/ui/components/message"
 import {
   Select,
   SelectContent,
@@ -35,9 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Message, MessageContent } from "@workspace/ui/components/message"
 import {
   InputGroup,
   InputGroupAddon,
@@ -494,6 +494,14 @@ function ConversationRail({ activeId }: { activeId: string }) {
   const navigate = useNavigate()
   const { isSelecting } = useMomoChat()
   const conversations = useConversations(true)
+  const [now, setNow] = useState<number | null>(null)
+
+  useEffect(() => {
+    const tick = () => setNow(Date.now())
+    tick()
+    const id = window.setInterval(tick, 60_000)
+    return () => window.clearInterval(id)
+  }, [])
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r">
@@ -536,7 +544,9 @@ function ConversationRail({ activeId }: { activeId: string }) {
                 {conversation.title}
               </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {conversationAge(conversation.updated_at, Date.now())}
+                {now === null
+                  ? null
+                  : conversationAge(conversation.updated_at, now)}
               </span>
             </button>
           ))}
