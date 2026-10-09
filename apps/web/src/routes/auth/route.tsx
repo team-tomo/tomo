@@ -38,7 +38,7 @@ function AuthLayout() {
 
       <div className="relative z-10 mx-auto w-full max-w-sm">
         <div className="mb-4 flex items-center justify-center gap-2">
-          <HugeiconsIcon icon={SpiralsIcon} className="h-8 w-8 text-white" />
+          <HugeiconsIcon icon={SpiralsIcon} className="h-8 w-8 text-primary" />
         </div>
 
         <Outlet />

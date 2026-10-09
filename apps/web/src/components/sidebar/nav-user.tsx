@@ -75,10 +75,10 @@ export function NavUser({ user }: { user: CurrentUser }) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton className="py-0.5 group-data-[collapsible=icon]:p-0! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" />
+              <SidebarMenuButton className="py-0.5 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" />
             }
           >
-            <Avatar className="size-5">
+            <Avatar className="size-6">
               <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                 {initials}

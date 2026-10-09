@@ -64,6 +64,7 @@ function TimesheetLayout() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-2">
         <Tabs
+          className="h-full self-stretch"
           value={tab}
           onValueChange={(value) => {
             const next = TIMESHEET_TABS.find((item) => item.value === value)
@@ -72,9 +73,13 @@ function TimesheetLayout() {
             }
           }}
         >
-          <TabsList>
+          <TabsList variant="line" className="h-full! p-0">
             {TIMESHEET_TABS.map((item) => (
-              <TabsTrigger key={item.value} value={item.value}>
+              <TabsTrigger
+                key={item.value}
+                value={item.value}
+                className="h-full after:bg-primary group-data-horizontal/tabs:after:-bottom-px"
+              >
                 <HugeiconsIcon icon={item.icon} className="size-4" />
                 {item.label}
               </TabsTrigger>
