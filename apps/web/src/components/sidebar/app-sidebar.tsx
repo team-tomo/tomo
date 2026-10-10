@@ -11,6 +11,7 @@ import {
   StartUp02Icon,
   Target02Icon,
   UserMultiple02Icon,
+  BookOpen02Icon,
 } from "@hugeicons/core-free-icons"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { NavUser } from "@/components/sidebar/nav-user"
@@ -51,6 +52,11 @@ const data = {
       title: "Trainings",
       url: "/trainings",
       icon: <HugeiconsIcon icon={Target02Icon} />,
+    },
+    {
+      title: "Knowledge Base",
+      url: "/knowledge-base",
+      icon: <HugeiconsIcon icon={BookOpen02Icon} />,
     },
     {
       title: "Analytics",
@@ -103,7 +109,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu className="min-w-0 flex-1 group-data-[collapsible=icon]:flex-none">
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Open sidebar"
               className="h-8 gap-2 p-0 group-data-[collapsible=icon]:p-0! hover:bg-transparent active:bg-transparent"
               onClick={(event) => {
                 if (state !== "collapsed") {
