@@ -33,7 +33,7 @@ function AgentsLayout() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2">
-        <Button type="button">
+        <Button type="button" variant="outline">
           <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
           Create Agent
         </Button>

@@ -3,6 +3,16 @@ import { apiFetch } from "@/lib/api"
 export type LeaveType = "vl" | "sl" | "el" | "ml" | "pl"
 export type LeaveCoverage = "whole" | "half"
 
+export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled"
+
+export type LeaveRequest = {
+  id: string
+  date: string
+  leave_type: LeaveType
+  coverage: LeaveCoverage
+  status: LeaveStatus
+}
+
 export type FileLeavePayload = {
   date: string
   leave_type: LeaveType
@@ -31,6 +41,17 @@ function errorDetail(body: unknown, fallback: string): string {
     }
   }
   return fallback
+}
+
+export async function listLeaveRequests(): Promise<LeaveRequest[]> {
+  const res = await apiFetch("/leave")
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(
+      errorDetail(body, `Failed to fetch leave requests (${res.status})`)
+    )
+  }
+  return body as LeaveRequest[]
 }
 
 export async function fileLeave(payload: FileLeavePayload): Promise<void> {

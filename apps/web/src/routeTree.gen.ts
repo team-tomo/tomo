@@ -27,7 +27,6 @@ import { Route as FeaturesEngagementsIndexRouteImport } from './routes/_features
 import { Route as FeaturesSettingsIndexRouteImport } from './routes/_features/settings/index'
 import { Route as FeaturesTimesheetIndexRouteImport } from './routes/_features/timesheet/index'
 import { Route as FeaturesTimesheetActualsRouteImport } from './routes/_features/timesheet/actuals'
-import { Route as FeaturesTimesheetAttendanceRouteImport } from './routes/_features/timesheet/attendance'
 import { Route as FeaturesTimesheetLeavesRouteImport } from './routes/_features/timesheet/leaves'
 import { Route as FeaturesTrainingsIndexRouteImport } from './routes/_features/trainings/index'
 import { Route as FeaturesTimesheetLeavesIdRouteImport } from './routes/_features/timesheet/leaves.$id'
@@ -124,12 +123,6 @@ const FeaturesTimesheetActualsRoute =
     path: '/actuals',
     getParentRoute: () => FeaturesTimesheetRouteRoute,
   } as any)
-const FeaturesTimesheetAttendanceRoute =
-  FeaturesTimesheetAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
-    getParentRoute: () => FeaturesTimesheetRouteRoute,
-  } as any)
 const FeaturesTimesheetLeavesRoute = FeaturesTimesheetLeavesRouteImport.update({
   id: '/leaves',
   path: '/leaves',
@@ -158,7 +151,6 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
-  '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts/': typeof FeaturesAccountsIndexRoute
   '/agents/': typeof FeaturesAgentsIndexRoute
@@ -178,7 +170,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
-  '/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/accounts': typeof FeaturesAccountsIndexRoute
   '/agents': typeof FeaturesAgentsIndexRoute
@@ -203,7 +194,6 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/_features/agents/$conversationId': typeof FeaturesAgentsConversationIdRoute
   '/_features/timesheet/actuals': typeof FeaturesTimesheetActualsRoute
-  '/_features/timesheet/attendance': typeof FeaturesTimesheetAttendanceRoute
   '/_features/timesheet/leaves': typeof FeaturesTimesheetLeavesRouteWithChildren
   '/_features/accounts/': typeof FeaturesAccountsIndexRoute
   '/_features/agents/': typeof FeaturesAgentsIndexRoute
@@ -228,7 +218,6 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/agents/$conversationId'
     | '/timesheet/actuals'
-    | '/timesheet/attendance'
     | '/timesheet/leaves'
     | '/accounts/'
     | '/agents/'
@@ -248,7 +237,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agents/$conversationId'
     | '/timesheet/actuals'
-    | '/timesheet/attendance'
     | '/timesheet/leaves'
     | '/accounts'
     | '/agents'
@@ -272,7 +260,6 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/_features/agents/$conversationId'
     | '/_features/timesheet/actuals'
-    | '/_features/timesheet/attendance'
     | '/_features/timesheet/leaves'
     | '/_features/accounts/'
     | '/_features/agents/'
@@ -418,13 +405,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesTimesheetActualsRouteImport
       parentRoute: typeof FeaturesTimesheetRouteRoute
     }
-    '/_features/timesheet/attendance': {
-      id: '/_features/timesheet/attendance'
-      path: '/attendance'
-      fullPath: '/timesheet/attendance'
-      preLoaderRoute: typeof FeaturesTimesheetAttendanceRouteImport
-      parentRoute: typeof FeaturesTimesheetRouteRoute
-    }
     '/_features/timesheet/leaves': {
       id: '/_features/timesheet/leaves'
       path: '/leaves'
@@ -478,7 +458,6 @@ const FeaturesTimesheetLeavesRouteWithChildren =
 
 interface FeaturesTimesheetRouteRouteChildren {
   FeaturesTimesheetActualsRoute: typeof FeaturesTimesheetActualsRoute
-  FeaturesTimesheetAttendanceRoute: typeof FeaturesTimesheetAttendanceRoute
   FeaturesTimesheetLeavesRoute: typeof FeaturesTimesheetLeavesRouteWithChildren
   FeaturesTimesheetIndexRoute: typeof FeaturesTimesheetIndexRoute
 }
@@ -486,7 +465,6 @@ interface FeaturesTimesheetRouteRouteChildren {
 const FeaturesTimesheetRouteRouteChildren: FeaturesTimesheetRouteRouteChildren =
   {
     FeaturesTimesheetActualsRoute: FeaturesTimesheetActualsRoute,
-    FeaturesTimesheetAttendanceRoute: FeaturesTimesheetAttendanceRoute,
     FeaturesTimesheetLeavesRoute: FeaturesTimesheetLeavesRouteWithChildren,
     FeaturesTimesheetIndexRoute: FeaturesTimesheetIndexRoute,
   }
