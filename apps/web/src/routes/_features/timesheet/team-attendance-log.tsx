@@ -46,6 +46,23 @@ const SAMPLE_STATUSES: AttendanceStatus[] = [
 
 const OFFICES = ["Uptown Tower 2", "Cebu", "CG2"]
 
+const PLACEHOLDER_GRADIENTS = [
+  "bg-gradient-to-br from-emerald-200 to-teal-400 text-emerald-950",
+  "bg-gradient-to-br from-sky-200 to-blue-400 text-sky-950",
+  "bg-gradient-to-br from-amber-200 to-orange-300 text-orange-950",
+  "bg-gradient-to-br from-rose-200 to-pink-400 text-rose-950",
+  "bg-gradient-to-br from-violet-200 to-purple-400 text-violet-950",
+  "bg-gradient-to-br from-cyan-200 to-sky-400 text-cyan-950",
+  "bg-gradient-to-br from-lime-200 to-green-400 text-green-950",
+  "bg-gradient-to-br from-fuchsia-200 to-pink-400 text-fuchsia-950",
+]
+
+function placeholderGradient(name: string) {
+  let hash = 0
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length]
+}
+
 function sampleRows(): MemberLog[] {
   let officeCount = 0
   return Array.from({ length: 15 }, (_, index) => {
@@ -90,36 +107,40 @@ export function TeamAttendanceLog() {
                 {day.rows.map((row) => (
                   <li
                     key={`${day.id}-${row.name}`}
-                    className="flex items-center gap-3 border-b px-1 py-3"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-3 gap-y-2 border-b px-1 py-2 text-xs"
                   >
-                    <Avatar>
-                      <AvatarFallback>{getInitials(row.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1 text-xs">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Avatar size="sm" className="size-4!">
+                        <AvatarFallback
+                          className={`text-[8px]! font-medium ${placeholderGradient(row.name)}`}
+                        >
+                          {getInitials(row.name)}
+                        </AvatarFallback>
+                      </Avatar>
                       <p className="truncate">{row.name}</p>
-                      <div className="mt-1 flex items-center gap-3 text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <HugeiconsIcon
-                            icon={Appointment01Icon}
-                            className="size-3.5 shrink-0"
-                          />
-                          {row.timeIn ?? "-"}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <HugeiconsIcon
-                            icon={CalendarRemove01Icon}
-                            className="size-3.5 shrink-0"
-                          />
-                          {row.timeIn ? outText(day.id, row.timeOut) : "-"}
-                        </span>
-                      </div>
                     </div>
-                    <div className="shrink-0 text-right text-xs leading-5 text-muted-foreground">
-                      <p>Status: {STATUS_LABEL[row.status]}</p>
-                      <p>
-                        In-Office: {row.office ? `Yes (${row.office})` : "No"}
-                      </p>
+                    <p className="text-right text-muted-foreground">
+                      Status: {STATUS_LABEL[row.status]}
+                    </p>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <HugeiconsIcon
+                          icon={Appointment01Icon}
+                          className="size-3.5 shrink-0"
+                        />
+                        {row.timeIn ?? "-"}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <HugeiconsIcon
+                          icon={CalendarRemove01Icon}
+                          className="size-3.5 shrink-0"
+                        />
+                        {row.timeIn ? outText(day.id, row.timeOut) : "-"}
+                      </span>
                     </div>
+                    <p className="text-right text-muted-foreground">
+                      In-Office: {row.office ? `Yes (${row.office})` : "No"}
+                    </p>
                   </li>
                 ))}
               </ul>
