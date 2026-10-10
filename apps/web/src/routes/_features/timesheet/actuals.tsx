@@ -5,5 +5,5 @@ export const Route = createFileRoute("/_features/timesheet/actuals")({
 })
 
 function TimesheetActualsPage() {
-  return <div>Hello "/_features/timesheet/actuals"!</div>
+  return <div></div>
 }

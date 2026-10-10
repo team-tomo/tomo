@@ -1,9 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { AttendanceHeatmap } from "@/routes/_features/timesheet/attendance-heatmap"
 
 export const Route = createFileRoute("/_features/timesheet/")({
-  component: TimesheetOverviewPage,
+  component: TimesheetPage,
 })
 
-function TimesheetOverviewPage() {
-  return <div>Timesheet Overview</div>
+function TimesheetPage() {
+  return (
+    <div className="p-4">
+      <AttendanceHeatmap />
+    </div>
+  )
 }

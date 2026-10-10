@@ -9,7 +9,6 @@ import {
   BookOpenIcon,
   Calendar03Icon,
   CalendarBlock01Icon,
-  News01Icon,
   StickyNote02Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
@@ -17,14 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 
 const TIMESHEET_TABS = [
   {
-    value: "overview",
-    to: "/timesheet",
-    label: "Overview",
-    icon: News01Icon,
-  },
-  {
     value: "attendance",
-    to: "/timesheet/attendance",
+    to: "/timesheet",
     label: "Attendance",
     icon: Calendar03Icon,
   },
@@ -46,9 +39,9 @@ type TimesheetTab = (typeof TIMESHEET_TABS)[number]["value"]
 
 function tabFromPath(pathname: string): TimesheetTab {
   const match = TIMESHEET_TABS.find(
-    (tab) => tab.value !== "overview" && pathname.startsWith(tab.to)
+    (tab) => tab.to !== "/timesheet" && pathname.startsWith(tab.to)
   )
-  return match?.value ?? "overview"
+  return match?.value ?? "attendance"
 }
 
 export const Route = createFileRoute("/_features/timesheet")({
@@ -86,10 +79,18 @@ function TimesheetLayout() {
             ))}
           </TabsList>
         </Tabs>
-        <Button type="button" variant="secondary" className="border-border">
-          <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
-          Timesheet Guide
-        </Button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button type="button" variant="outline">
+            Button
+          </Button>
+          <Button type="button" variant="outline">
+            Button
+          </Button>
+          <Button type="button" variant="secondary" className="border-border">
+            <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
+            Timesheet Guide
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-auto">
         <Outlet />
