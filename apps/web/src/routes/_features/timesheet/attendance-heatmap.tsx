@@ -124,7 +124,7 @@ function tipFor(
     year: "numeric",
   })
   if (key > todayIso && !leave.has(key) && !attendance.has(key)) {
-    return { when, name: "Upcoming", swatch: "bg-muted/40" }
+    return { when, name: "Upcoming", swatch: SWATCH.none }
   }
   const level = levelFor(key, attendance, leave)
   const name =
@@ -236,7 +236,7 @@ function AttendanceHeatmapSkeleton({
   yearEnd: string
 }) {
   return (
-    <div className="w-fit max-w-full self-start overflow-x-auto">
+    <div className="mx-auto w-fit max-w-full overflow-x-auto">
       <div className="mb-3">
         <GraphFrame labels={labels}>
           {weeks.map((week) => (
@@ -313,7 +313,7 @@ export function AttendanceHeatmap() {
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="w-fit max-w-full self-start overflow-x-auto"
+        className="mx-auto w-fit max-w-full overflow-x-auto"
         onPointerLeave={() => setHover(null)}
       >
         <div className="mb-3">
