@@ -9,8 +9,8 @@ import {
   BookOpenIcon,
   Calendar03Icon,
   CalendarBlock01Icon,
-  Add01Icon,
   StickyNote02Icon,
+  PlusSignCircleIcon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
@@ -82,11 +82,11 @@ function TimesheetLayout() {
         </Tabs>
         <div className="flex shrink-0 items-center gap-1.5">
           <Button type="button" variant="outline">
-            <HugeiconsIcon icon={Add01Icon} />
+            <HugeiconsIcon icon={PlusSignCircleIcon} />
             File Leave Request
           </Button>
           <Button type="button" variant="outline">
-            <HugeiconsIcon icon={Add01Icon} />
+            <HugeiconsIcon icon={PlusSignCircleIcon} />
             Submit Weekly Actuals
           </Button>
           <Button type="button" variant="secondary" className="border-border">

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react"
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Add01Icon, LayersLogoIcon } from "@hugeicons/core-free-icons"
+import { LayersLogoIcon, PlusSignCircleIcon } from "@hugeicons/core-free-icons"
 import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
@@ -34,7 +34,7 @@ function AgentsLayout() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2">
         <Button type="button" variant="outline">
-          <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
+          <HugeiconsIcon icon={PlusSignCircleIcon} data-icon="inline-start" />
           Create Agent
         </Button>
         <Button type="button" variant="outline">
