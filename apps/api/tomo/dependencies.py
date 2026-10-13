@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from supabase import (
     AsyncClient,
     AsyncClientOptions,
@@ -10,7 +11,6 @@ from supabase import (
     SupabaseException,
     acreate_client,
 )
-
 from tomo.account.service import AccountService, account_service
 from tomo.actuals.service import ActualService, actual_service
 from tomo.auth.service import AuthService, auth_service
