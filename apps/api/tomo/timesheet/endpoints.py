@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 
@@ -7,6 +8,7 @@ from tomo.dependencies import AuthContextDependency, TimesheetServiceDependency
 from tomo.timesheet.schemas import (
     AttendanceQuerySchema,
     AttendanceSummarySchema,
+    AttendanceUpdateSchema,
     ClockInOutResponseSchema,
     ClockOutSchema,
 )
@@ -69,3 +71,16 @@ async def list_attendance(
 ) -> list[ClockInOutResponseSchema]:
     """List the attendance for the user for the given time range."""
     return await service.list_attendance(query, auth_context)
+
+
+@router.patch("/attendance/{attendance_id}")
+@limiter.limit("5/minute")
+async def update_attendance(
+    request: Request,
+    attendance_id: UUID,
+    payload: AttendanceUpdateSchema,
+    auth_context: AuthContextDependency,
+    service: TimesheetServiceDependency,
+) -> ClockInOutResponseSchema:
+    """Update one attendance row for the signed-in user."""
+    return await service.update_attendance(attendance_id, payload, auth_context)

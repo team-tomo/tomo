@@ -1,5 +1,6 @@
 import logging
 from datetime import date, datetime, time, timedelta
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from postgrest.exceptions import APIError
@@ -9,6 +10,7 @@ from tomo.core.config import APP_TIME_ZONE
 from tomo.timesheet.schemas import (
     AttendanceQuerySchema,
     AttendanceSummarySchema,
+    AttendanceUpdateSchema,
     ClockInOutResponseSchema,
     ClockOutSchema,
     TodayStatusResponseSchema,
@@ -19,6 +21,14 @@ logger = logging.getLogger(__name__)
 _MAX_RANGE_DAYS = 31
 _LATE_AFTER = time(9, 0, 0)
 _TIMESHEET = "timesheet"
+
+
+def _is_late(clock: time) -> bool:
+    return clock > _LATE_AFTER
+
+
+def _clock_on(day: date, clock: time) -> str:
+    return datetime.combine(day, clock, tzinfo=APP_TIME_ZONE).isoformat()
 
 
 def _this_week(today: date) -> tuple[date, date]:
@@ -108,7 +118,7 @@ class TimesheetService:
             "user_id": auth_context.current_user_id,
             "date": now.date().isoformat(),
             "time_in": now.isoformat(),
-            "is_late": now.time() > _LATE_AFTER,
+            "is_late": _is_late(now.time()),
         }
 
         try:
@@ -250,6 +260,80 @@ class TimesheetService:
             AttendanceSummarySchema(date=row["date"], status=_attendance_status(row))
             for row in response.data
         ]
+
+    async def update_attendance(
+        self,
+        attendance_id: UUID,
+        payload: AttendanceUpdateSchema,
+        auth_context: AuthContext,
+    ) -> ClockInOutResponseSchema:
+        """Update one attendance row for the signed-in user."""
+
+        row_id = str(attendance_id)
+        try:
+            existing = (
+                await auth_context.client.from_(_TIMESHEET)
+                .select("*")
+                .eq("id", row_id)
+                .eq("user_id", auth_context.current_user_id)
+                .limit(1)
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to update attendance: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update attendance",
+            )
+
+        row = existing.data[0] if existing.data else None
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Attendance not found",
+            )
+
+        if payload.time_out is not None and payload.time_out <= payload.time_in:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Time out must be after time in",
+            )
+
+        day = date.fromisoformat(str(row["date"])[:10])
+        data = {
+            "time_in": _clock_on(day, payload.time_in),
+            "time_out": (
+                _clock_on(day, payload.time_out)
+                if payload.time_out is not None
+                else None
+            ),
+            "is_late": _is_late(payload.time_in),
+            "notes": payload.notes,
+        }
+
+        try:
+            response = (
+                await auth_context.client.from_(_TIMESHEET)
+                .update(data)
+                .eq("id", row_id)
+                .eq("user_id", auth_context.current_user_id)
+                .select("*")
+                .execute()
+            )
+        except APIError as e:
+            logger.error(f"Failed to update attendance: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update attendance",
+            )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Attendance not found",
+            )
+
+        return ClockInOutResponseSchema(**response.data[0])
 
 
 timesheet_service = TimesheetService()

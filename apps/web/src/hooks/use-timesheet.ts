@@ -6,7 +6,9 @@ import {
   getTodayAttendanceStatus,
   listAttendance,
   listAttendanceSummary,
+  updateAttendance,
   type AttendanceQuery,
+  type AttendanceUpdateBody,
 } from "@/services/timesheet-service"
 
 export const attendanceKeys = {
@@ -86,5 +88,21 @@ export function useAttendance(query: AttendanceQuery = {}, enabled = true) {
     queryKey: attendanceKeys.list(query.from_date, query.to_date),
     queryFn: () => listAttendance(query),
     enabled,
+  })
+}
+
+export function useUpdateAttendance() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: AttendanceUpdateBody }) =>
+      updateAttendance(id, body),
+    onSuccess: () => {
+      toast.add({
+        description: "Attendance updated",
+        type: "success",
+      })
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+    },
   })
 }
