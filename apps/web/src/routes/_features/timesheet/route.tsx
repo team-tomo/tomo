@@ -11,6 +11,7 @@ import {
   CalendarBlock01Icon,
   StickyNote02Icon,
   PlusSignCircleIcon,
+  Ticket02Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
@@ -33,6 +34,12 @@ const TIMESHEET_TABS = [
     to: "/timesheet/actuals",
     label: "Actuals",
     icon: StickyNote02Icon,
+  },
+  {
+    value: "manage-requests",
+    to: "/timesheet/manage-requests",
+    label: "Manage Requests",
+    icon: Ticket02Icon,
   },
 ] as const
 

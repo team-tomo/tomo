@@ -1,0 +1,9 @@
+import { createFileRoute } from "@tanstack/react-router"
+
+export const Route = createFileRoute("/_features/timesheet/manage-requests")({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Manage Requests</div>
+}
