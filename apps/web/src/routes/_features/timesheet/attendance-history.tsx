@@ -1,17 +1,27 @@
 import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { zodResolver } from "@hookform/resolvers/zod"
 import {
   Alert02Icon,
   Appointment01Icon,
   Calendar03Icon,
   CalendarRemove01Icon,
-  MoreHorizontalIcon,
   Note01Icon,
-  PencilEdit02Icon,
 } from "@hugeicons/core-free-icons"
+import { useAttendance, useUpdateAttendance } from "@/hooks/use-timesheet"
+import {
+  AttendanceUpdateSchema,
+  type AttendanceUpdateInput,
+} from "@/schemas/timesheet-schema"
+import type {
+  AttendanceRecord,
+  AttendanceUpdateBody,
+} from "@/services/timesheet-service"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -27,8 +37,6 @@ import {
   FieldLabel,
   FieldSet,
 } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -37,16 +45,6 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { Textarea } from "@workspace/ui/components/textarea"
-import { useAttendance, useUpdateAttendance } from "@/hooks/use-timesheet"
-import {
-  AttendanceUpdateSchema,
-  type AttendanceUpdateInput,
-} from "@/schemas/timesheet-schema"
-import type {
-  AttendanceRecord,
-  AttendanceUpdateBody,
-} from "@/services/timesheet-service"
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -138,7 +136,7 @@ function HistorySkeleton() {
       <TableBody>
         {Array.from({ length: 5 }, (_, index) => (
           <TableRow key={index}>
-            {Array.from({ length: 6 }, (_, cell) => (
+            {Array.from({ length: COLUMNS.length }, (_, cell) => (
               <TableCell key={cell}>
                 <Skeleton className="h-4 w-16" />
               </TableCell>
@@ -156,12 +154,11 @@ const COLUMNS = [
   { label: "Time out", icon: CalendarRemove01Icon },
   { label: "Late", icon: Alert02Icon },
   { label: "Notes", icon: Note01Icon },
-  { label: "Action", icon: PencilEdit02Icon },
 ] as const
 
 function HistoryHeads() {
   return (
-    <TableRow className="border-t">
+    <TableRow className="border-t bg-muted/50">
       {COLUMNS.map((column) => (
         <TableHead key={column.label}>
           <span className="inline-flex items-center gap-1.5">
@@ -205,41 +202,42 @@ export function AttendanceHistory() {
             <HistoryHeads />
           </TableHeader>
           <TableBody>
-            {attendance.data.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{formatRowDate(row.date)}</TableCell>
-                <TableCell>{formatClock(row.time_in)}</TableCell>
-                <TableCell>{formatClock(row.time_out)}</TableCell>
-                <TableCell>{row.is_late ? "Yes" : "No"}</TableCell>
-                <TableCell>
-                  <span
-                    className="block max-w-48 truncate"
-                    title={row.notes ?? undefined}
-                  >
-                    {row.notes ?? "-"}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="-ml-1"
-                    aria-label={`Update ${formatRowDate(row.date)}`}
-                    onClick={() => {
-                      update.reset()
-                      setEditing(row)
-                    }}
-                  >
-                    <HugeiconsIcon
-                      icon={MoreHorizontalIcon}
-                      strokeWidth={2}
-                      className="size-4"
-                    />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {attendance.data.map((row) => {
+              const open = () => {
+                update.reset()
+                setEditing(row)
+              }
+              return (
+                <TableRow
+                  key={row.id}
+                  tabIndex={0}
+                  role="button"
+                  data-state={editing?.id === row.id ? "selected" : undefined}
+                  aria-label={`Update ${formatRowDate(row.date)}`}
+                  className="cursor-pointer"
+                  onClick={open}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      open()
+                    }
+                  }}
+                >
+                  <TableCell>{formatRowDate(row.date)}</TableCell>
+                  <TableCell>{formatClock(row.time_in)}</TableCell>
+                  <TableCell>{formatClock(row.time_out)}</TableCell>
+                  <TableCell>{row.is_late ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    <span
+                      className="block max-w-50 truncate"
+                      title={row.notes ?? undefined}
+                    >
+                      {row.notes ?? "-"}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       )}
