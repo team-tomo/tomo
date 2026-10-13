@@ -90,11 +90,7 @@ function TimesheetLayout() {
         <div className="flex shrink-0 items-center gap-1.5">
           <Button type="button" variant="outline">
             <HugeiconsIcon icon={PlusSignCircleIcon} />
-            File Leave Request
-          </Button>
-          <Button type="button" variant="outline">
-            <HugeiconsIcon icon={PlusSignCircleIcon} />
-            Submit Weekly Actuals
+            File Request
           </Button>
           <Button type="button" variant="secondary" className="border-border">
             <HugeiconsIcon icon={BookOpenIcon} className="size-4" />

@@ -336,7 +336,7 @@ function UpdateAttendanceForm({
       </DialogHeader>
       <FieldSet className="mt-4">
         <FieldGroup>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             <Controller
               name="time_in"
               control={form.control}
@@ -350,9 +350,6 @@ function UpdateAttendanceForm({
                     required
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.error ? (
-                    <FieldError>{fieldState.error.message}</FieldError>
-                  ) : null}
                 </Field>
               )}
             />
@@ -381,11 +378,15 @@ function UpdateAttendanceForm({
                     type="time"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.error ? (
-                    <FieldError>{fieldState.error.message}</FieldError>
-                  ) : null}
                 </Field>
               )}
+            />
+            <FieldError
+              className="col-span-2"
+              errors={[
+                form.formState.errors.time_in,
+                form.formState.errors.time_out,
+              ].filter((error) => error?.message)}
             />
           </div>
           <Controller

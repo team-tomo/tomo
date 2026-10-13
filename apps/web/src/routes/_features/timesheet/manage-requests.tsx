@@ -5,5 +5,5 @@ export const Route = createFileRoute("/_features/timesheet/manage-requests")({
 })
 
 function RouteComponent() {
-  return <div>Manage Requests</div>
+  return <div></div>
 }
