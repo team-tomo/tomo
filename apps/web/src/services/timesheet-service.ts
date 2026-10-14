@@ -48,6 +48,12 @@ export type AttendanceQuery = {
   to_date?: string
 }
 
+export type AttendanceUpdateBody = {
+  time_in: string
+  time_out: string | null
+  notes: string | null
+}
+
 export async function getTodayAttendanceStatus(): Promise<TodayAttendanceStatus> {
   const res = await apiFetch("/timesheet/today-status")
 
@@ -117,6 +123,28 @@ export async function listAttendance(
     const body = await res.json().catch(() => null)
     throw new Error(
       body?.detail ?? `Failed to fetch attendance (${res.status})`
+    )
+  }
+
+  return res.json()
+}
+
+export async function updateAttendance(
+  id: string,
+  payload: AttendanceUpdateBody
+): Promise<AttendanceRecord> {
+  const res = await apiFetch(`/timesheet/attendance/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const detail = body?.detail
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : `Failed to update attendance (${res.status})`
     )
   }
 

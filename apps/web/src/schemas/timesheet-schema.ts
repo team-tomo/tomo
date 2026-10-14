@@ -54,3 +54,30 @@ export const LeaveRequestSchema = z
   })
 
 export type ClockOutInput = z.infer<typeof ClockOutSchema>
+
+function clockOrder(value: string) {
+  const [hour = "00", minute = "00", second = "00"] = value.split(":")
+  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:${second.padStart(2, "0")}`
+}
+
+export const AttendanceUpdateSchema = z
+  .object({
+    time_in: z.string().min(1, { message: "Time in is required" }),
+    time_out: z.string(),
+    notes: z
+      .string()
+      .trim()
+      .max(200, { message: "Notes must be at most 200 characters" }),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.time_out || !data.time_in) return
+    if (clockOrder(data.time_out) <= clockOrder(data.time_in)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Time out must be after time in",
+        path: ["time_out"],
+      })
+    }
+  })
+
+export type AttendanceUpdateInput = z.infer<typeof AttendanceUpdateSchema>

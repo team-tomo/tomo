@@ -10,10 +10,11 @@ import {
   Calendar03Icon,
   CalendarBlock01Icon,
   StickyNote02Icon,
-  PlusSignCircleIcon,
+  Ticket02Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+import { FileRequestDialog } from "./-file-request-dialog"
 
 const TIMESHEET_TABS = [
   {
@@ -33,6 +34,12 @@ const TIMESHEET_TABS = [
     to: "/timesheet/actuals",
     label: "Actuals",
     icon: StickyNote02Icon,
+  },
+  {
+    value: "manage-requests",
+    to: "/timesheet/manage-requests",
+    label: "Manage Requests",
+    icon: Ticket02Icon,
   },
 ] as const
 
@@ -81,18 +88,11 @@ function TimesheetLayout() {
           </TabsList>
         </Tabs>
         <div className="flex shrink-0 items-center gap-1.5">
-          <Button type="button" variant="outline">
-            <HugeiconsIcon icon={PlusSignCircleIcon} />
-            File Leave Request
-          </Button>
-          <Button type="button" variant="outline">
-            <HugeiconsIcon icon={PlusSignCircleIcon} />
-            Submit Weekly Actuals
-          </Button>
-          <Button type="button" variant="secondary" className="border-border">
+          <Button type="button" variant="outline" className="border-border">
             <HugeiconsIcon icon={BookOpenIcon} className="size-4" />
             Timesheet Guide
           </Button>
+          <FileRequestDialog />
         </div>
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-auto">

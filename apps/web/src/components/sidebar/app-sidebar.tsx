@@ -6,12 +6,13 @@ import {
   Chat01Icon,
   GeometricShapes01Icon,
   Home03Icon,
-  IdentityCardIcon,
   SpiralsIcon,
   StartUp02Icon,
   Target02Icon,
   UserMultiple02Icon,
   BookOpen02Icon,
+  Note04Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { NavUser } from "@/components/sidebar/nav-user"
@@ -83,7 +84,12 @@ const data = {
     {
       title: "Manage Accounts",
       url: "/accounts",
-      icon: <HugeiconsIcon icon={IdentityCardIcon} />,
+      icon: <HugeiconsIcon icon={UserGroupIcon} />,
+    },
+    {
+      title: "Activity Logs",
+      url: "/logs",
+      icon: <HugeiconsIcon icon={Note04Icon} />,
     },
   ],
 }

@@ -63,6 +63,13 @@ class TestUnauthenticated:
         response = TestClient(app).get(SUMMARY)
         assert response.status_code == 401
 
+    def test_update_attendance_requires_auth(self) -> None:
+        response = TestClient(app).patch(
+            f"{ATTENDANCE}/00000000-0000-4000-8000-000000000000",
+            json={"time_in": "08:00:00"},
+        )
+        assert response.status_code == 401
+
 
 class TestTodayStatus:
     def test_no_row_means_can_clock_in(self, api, freeze_manila) -> None:
@@ -387,3 +394,366 @@ class TestListAttendanceSummary:
             {"date": "2026-09-03", "status": "incomplete"},
             {"date": "2026-09-04", "status": "late"},
         ]
+
+
+class TestUpdateAttendance:
+    def test_note_change_keeps_clock_times(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="original",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:15:00",
+                "time_out": "17:45:00",
+                "notes": "corrected the note",
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["date"] == "2026-09-06"
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 8, 15, tzinfo=MANILA)
+        assert _iso(body["time_out"]) == datetime(2026, 9, 6, 17, 45, tzinfo=MANILA)
+        assert body["is_late"] is False
+        assert body["notes"] == "corrected the note"
+        assert table.rows[0]["time_in"] == "2026-09-06T08:15:00+08:00"
+        assert table.rows[0]["time_out"] == "2026-09-06T17:45:00+08:00"
+
+    def test_time_in_0930_is_late(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "09:30:00",
+                "time_out": "17:45:00",
+                "notes": "shift",
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["is_late"] is True
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 9, 30, tzinfo=MANILA)
+        assert _iso(body["time_out"]) == datetime(2026, 9, 6, 17, 45, tzinfo=MANILA)
+        assert body["notes"] == "shift"
+        assert table.rows[0]["is_late"] is True
+
+    def test_time_in_0830_is_on_time(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T09:30:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=True,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:30:00",
+                "time_out": "17:45:00",
+                "notes": "shift",
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["is_late"] is False
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 8, 30, tzinfo=MANILA)
+        assert body["date"] == "2026-09-06"
+        assert table.rows[0]["is_late"] is False
+
+    def test_time_in_at_nine_is_on_time(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T09:30:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=True,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "09:00:00",
+                "time_out": "17:45:00",
+                "notes": "shift",
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["is_late"] is False
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 9, 0, tzinfo=MANILA)
+        assert table.rows[0]["is_late"] is False
+
+    def test_time_out_before_time_in_is_bad_request(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "10:00:00",
+                "time_out": "09:00:00",
+                "notes": "changed",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Time out must be after time in"
+        assert table.rows[0]["time_in"] == "2026-09-06T08:15:00+08:00"
+        assert table.rows[0]["time_out"] == "2026-09-06T17:45:00+08:00"
+        assert table.rows[0]["notes"] == "shift"
+        assert table.rows[0]["is_late"] is False
+        assert table.rows[0]["date"] == "2026-09-06"
+
+    def test_time_out_equal_to_time_in_is_bad_request(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "10:00:00",
+                "time_out": "10:00:00",
+                "notes": "changed",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Time out must be after time in"
+        assert table.rows[0]["time_in"] == "2026-09-06T08:15:00+08:00"
+        assert table.rows[0]["notes"] == "shift"
+        assert table.rows[0]["is_late"] is False
+
+    def test_clearing_time_out_stores_null(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={"time_in": "08:15:00", "time_out": None, "notes": "shift"},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["time_out"] is None
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 8, 15, tzinfo=MANILA)
+        assert body["notes"] == "shift"
+        assert body["is_late"] is False
+        assert table.rows[0]["time_out"] is None
+
+    def test_note_at_200_characters_is_stored(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+        note = "n" * 200
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={"time_in": "08:15:00", "time_out": "17:45:00", "notes": note},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["notes"] == note
+        assert table.rows[0]["notes"] == note
+
+    def test_note_over_200_characters_is_unprocessable(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:15:00",
+                "time_out": "17:45:00",
+                "notes": "n" * 201,
+            },
+        )
+
+        assert response.status_code == 422
+        assert table.rows[0]["notes"] == "shift"
+        assert table.rows[0]["time_in"] == "2026-09-06T08:15:00+08:00"
+        assert table.rows[0]["time_out"] == "2026-09-06T17:45:00+08:00"
+        assert table.rows[0]["is_late"] is False
+
+    def test_blank_notes_store_null(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:15:00",
+                "time_out": "17:45:00",
+                "notes": "   ",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["notes"] is None
+        assert table.rows[0]["notes"] is None
+
+    def test_notes_are_stripped(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:15:00",
+                "time_out": "17:45:00",
+                "notes": "  left early  ",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["notes"] == "left early"
+
+    def test_another_users_row_is_not_found(self, api, table) -> None:
+        other = table.seed(
+            user_id=OTHER_USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T08:15:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=False,
+            notes="theirs",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{other['id']}",
+            json={
+                "time_in": "09:30:00",
+                "time_out": "18:00:00",
+                "notes": "mine",
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Attendance not found"
+        assert table.rows[0]["user_id"] == OTHER_USER_ID
+        assert table.rows[0]["date"] == "2026-09-06"
+        assert table.rows[0]["time_in"] == "2026-09-06T08:15:00+08:00"
+        assert table.rows[0]["time_out"] == "2026-09-06T17:45:00+08:00"
+        assert table.rows[0]["notes"] == "theirs"
+        assert table.rows[0]["is_late"] is False
+
+    def test_unknown_id_is_not_found(self, api, table) -> None:
+        response = api.patch(
+            f"{ATTENDANCE}/00000000-0000-4000-8000-000000000000",
+            json={
+                "time_in": "08:15:00",
+                "time_out": "17:45:00",
+                "notes": "missing",
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Attendance not found"
+        assert table.rows == []
+
+    def test_date_and_is_late_in_body_are_not_applied(self, api, table) -> None:
+        seeded = table.seed(
+            user_id=USER_ID,
+            date="2026-09-06",
+            time_in="2026-09-06T09:30:00+08:00",
+            time_out="2026-09-06T17:45:00+08:00",
+            is_late=True,
+            notes="shift",
+        )
+
+        response = api.patch(
+            f"{ATTENDANCE}/{seeded['id']}",
+            json={
+                "time_in": "08:30:00",
+                "time_out": "17:45:00",
+                "notes": "shift",
+                "date": "2020-01-01",
+                "is_late": True,
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["date"] == "2026-09-06"
+        assert body["is_late"] is False
+        assert _iso(body["time_in"]) == datetime(2026, 9, 6, 8, 30, tzinfo=MANILA)
+        assert table.rows[0]["date"] == "2026-09-06"
+        assert table.rows[0]["is_late"] is False
+
+    def test_summary_route_is_not_an_update(self, api, table, freeze_manila) -> None:
+        freeze_manila(MID_MORNING)
+        _attendance(table, "2026-09-06", time_out="2026-09-06T09:00:00+08:00")
+
+        summary = api.get(SUMMARY)
+        assert summary.status_code == 200
+        assert summary.json() == [{"date": "2026-09-06", "status": "on_time"}]
+
+        response = api.patch(
+            SUMMARY,
+            json={"time_in": "08:00:00", "time_out": "17:00:00", "notes": "nope"},
+        )
+
+        assert response.status_code == 422
+        assert table.rows[0]["notes"] is None
+        assert table.rows[0]["is_late"] is False
+        assert table.rows[0]["time_in"] == "2026-09-06T00:00:00+00:00"

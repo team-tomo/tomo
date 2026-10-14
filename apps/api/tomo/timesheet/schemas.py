@@ -1,8 +1,8 @@
-from datetime import UTC, date, datetime
-from typing import Literal
+from datetime import UTC, date, datetime, time
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from tomo.core.config import APP_TIME_ZONE
 
@@ -14,6 +14,20 @@ class TodayStatusResponseSchema(BaseModel):
 
 class ClockOutSchema(BaseModel):
     notes: str | None = None
+
+
+class AttendanceUpdateSchema(BaseModel):
+    time_in: time
+    time_out: time | None = None
+    notes: Annotated[str, Field(max_length=200)] | None = None
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def blank_notes_are_none(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
 
 class AttendanceQuerySchema(BaseModel):
